@@ -113,6 +113,26 @@ namespace HCITrilogy.Lockdown.EditorTools
             return g;
         }
 
+        /// <summary>
+        /// Returns an empty anchor GameObject at `pos` with a unit-scaled child
+        /// cube of `scale` as its visual. Children added to the returned object
+        /// inherit position/rotation only — no scale-propagation skew. Use this
+        /// for any container that will have meaningful child geometry, since a
+        /// non-uniformly scaled cube parent distorts every descendant.
+        /// </summary>
+        private static GameObject MakeAnchoredBox(string name, Vector3 pos, Vector3 scale, Material mat, Transform parent)
+        {
+            var anchor = new GameObject(name);
+            anchor.transform.SetParent(parent, false);
+            anchor.transform.localPosition = pos;
+            var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            visual.name = name + "_Visual";
+            visual.transform.SetParent(anchor.transform, false);
+            visual.transform.localScale = scale;
+            if (mat != null) visual.GetComponent<Renderer>().sharedMaterial = mat;
+            return anchor;
+        }
+
         private static GameObject MakeButton(string name, Vector3 pos, Color col, Transform parent, out Highlightable h)
         {
             var g = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -423,9 +443,11 @@ namespace HCITrilogy.Lockdown.EditorTools
                 "Calibration dial: position 7 (red mark).";
             nso.ApplyModifiedPropertiesWithoutUndo();
 
-            // Drawer (with key card inside, decorative only)
-            var drawerHousing = MakeBox("Cabinet", new Vector3(W/2 - 1.0f, 0.5f, D/2 - 1.0f), new Vector3(1.2f, 1.0f, 1.0f), deskMat, room);
-            var drawerBody = MakeBox("DrawerBody", new Vector3(0, 0.05f, 0.15f), new Vector3(0.95f, 0.45f, 0.7f), deskMat, drawerHousing.transform);
+            // Drawer (with key card inside, decorative only). Use anchored
+            // boxes here because the cabinet + drawer body both have child
+            // geometry, and a scaled cube parent would distort every child.
+            var drawerHousing = MakeAnchoredBox("Cabinet", new Vector3(W/2 - 1.0f, 0.5f, D/2 - 1.0f), new Vector3(1.2f, 1.0f, 1.0f), deskMat, room);
+            var drawerBody = MakeAnchoredBox("DrawerBody", new Vector3(0, 0.05f, 0.15f), new Vector3(0.95f, 0.45f, 0.7f), deskMat, drawerHousing.transform);
             var drawerHandle = MakeBox("Handle", new Vector3(0, 0.05f, 0.36f), new Vector3(0.30f, 0.05f, 0.04f), MakeMat("Handle", new Color(0.8f, 0.8f, 0.8f), 0.6f), drawerBody.transform);
             drawerBody.AddComponent<Highlightable>();
             var drawer = drawerBody.AddComponent<Drawer>();
@@ -433,16 +455,21 @@ namespace HCITrilogy.Lockdown.EditorTools
             dso.FindProperty("body").objectReferenceValue = drawerBody.transform;
             dso.ApplyModifiedPropertiesWithoutUndo();
 
-            // Keypad (on wall east, near door)
-            var keypadBack = MakeBox("KeypadHousing", new Vector3(W/2 - 0.15f, 1.4f, -1.5f), new Vector3(0.1f, 0.6f, 0.6f), MakeMat("KeypadBack", new Color(0.10f, 0.12f, 0.15f), 0.3f), room);
+            // Keypad (on wall east, near door). Anchored so the display canvas,
+            // status light, and 12 keys aren't squashed by the housing's
+            // (0.1, 0.6, 0.6) scale.
+            var keypadBack = MakeAnchoredBox("KeypadHousing", new Vector3(W/2 - 0.15f, 1.4f, -1.5f), new Vector3(0.1f, 0.6f, 0.6f), MakeMat("KeypadBack", new Color(0.10f, 0.12f, 0.15f), 0.3f), room);
             var keypad = keypadBack.AddComponent<Keypad>();
+            // Keypad housing extents: x in [-0.05, 0.05], y in [-0.30, 0.30], z in [-0.30, 0.30].
+            // Front (west) face is at x = -0.05.
             var keypadDisplayGO = new GameObject("DisplayCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             keypadDisplayGO.transform.SetParent(keypadBack.transform, false);
             var disCanvas = keypadDisplayGO.GetComponent<Canvas>();
             disCanvas.renderMode = RenderMode.WorldSpace;
-            keypadDisplayGO.transform.localPosition = new Vector3(-0.55f, 0.18f, 0);
+            keypadDisplayGO.transform.localPosition = new Vector3(-0.06f, 0.20f, 0);
             keypadDisplayGO.transform.localRotation = Quaternion.Euler(0, -90, 0);
-            keypadDisplayGO.transform.localScale = Vector3.one * 0.005f;
+            // 220 px x 80 px text * 0.001 m/px = 0.22 m x 0.08 m banner — fits the 0.6 m housing face.
+            keypadDisplayGO.transform.localScale = Vector3.one * 0.001f;
             var disText = new GameObject("Display").AddComponent<Text>();
             disText.transform.SetParent(keypadDisplayGO.transform, false);
             disText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -453,7 +480,7 @@ namespace HCITrilogy.Lockdown.EditorTools
             disrt.sizeDelta = new Vector2(220, 80);
             var keypadLight = new GameObject("StatusLight").AddComponent<Light>();
             keypadLight.transform.SetParent(keypadBack.transform, false);
-            keypadLight.transform.localPosition = new Vector3(-0.6f, 0.25f, 0);
+            keypadLight.transform.localPosition = new Vector3(-0.08f, 0.25f, 0);
             keypadLight.type = LightType.Point; keypadLight.range = 0.6f; keypadLight.intensity = 1.5f;
             keypadLight.color = AccentRed;
 
@@ -463,15 +490,22 @@ namespace HCITrilogy.Lockdown.EditorTools
             kso.FindProperty("statusLight").objectReferenceValue = keypadLight;
             kso.ApplyModifiedPropertiesWithoutUndo();
 
-            // Keypad buttons (3x4 grid with C and 0)
+            // Keypad buttons (3x4 grid with C and 0). Sized + spaced to fit the
+            // 0.6m x 0.6m front face of the (now anchored) housing. Each button
+            // is a 4cm-wide tile, sitting 1cm proud of the west face (x = -0.06).
             int[] grid = { 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, 0, -2 }; // -1 = clear, -2 = blank
             for (int i = 0; i < grid.Length; i++)
             {
                 int row = i / 3; int col = i % 3;
                 int v = grid[i];
                 if (v == -2) continue;
-                Vector3 lpos = new(-0.55f, -0.18f - row * 0.10f, -0.16f + col * 0.16f);
+                // Y: 4 rows centered around -0.05 (below the display banner) → y ∈ {0.04, -0.04, -0.12, -0.20}.
+                // Z: 3 cols centered at 0 with 12 cm spacing → z ∈ {-0.12, 0.00, 0.12}.
+                Vector3 lpos = new(-0.06f, 0.04f - row * 0.08f, -0.12f + col * 0.12f);
                 var bGO = MakeButton($"Key_{(v >= 0 ? v.ToString() : "C")}", lpos, v == -1 ? AccentRed : AccentCyan, keypadBack.transform, out _);
+                // MakeButton creates a (0.12, 0.12, 0.06) cube. Override to a flatter
+                // 4 cm cube tile that sits proud of the housing surface.
+                bGO.transform.localScale = new Vector3(0.04f, 0.06f, 0.06f);
                 var kb = bGO.AddComponent<KeypadButton>();
                 var kbo = new SerializedObject(kb);
                 kbo.FindProperty("keypad").objectReferenceValue = keypad;
@@ -480,8 +514,9 @@ namespace HCITrilogy.Lockdown.EditorTools
                 kbo.ApplyModifiedPropertiesWithoutUndo();
             }
 
-            // Cable bench: 2 sockets + 2 cables
-            var bench = MakeBox("Bench", new Vector3(0, 0.45f, D/2 - 0.4f), new Vector3(2.4f, 0.9f, 0.6f), deskMat, room);
+            // Cable bench: 2 sockets + 2 cables. Anchored so socket housings
+            // and cable plugs sit at their authored sizes.
+            var bench = MakeAnchoredBox("Bench", new Vector3(0, 0.45f, D/2 - 0.4f), new Vector3(2.4f, 0.9f, 0.6f), deskMat, room);
 
             CableSocket socketA = MakeSocket("SocketA", new Vector3(-0.5f, 0.35f, -0.25f), AccentCyan, matAccent, bench.transform);
             CableSocket socketB = MakeSocket("SocketB", new Vector3(0.5f,  0.35f, -0.25f), AccentAmber, matAmber,  bench.transform);
@@ -489,16 +524,22 @@ namespace HCITrilogy.Lockdown.EditorTools
             var cableA = MakeCable("CableA", new Vector3(-0.7f, 0.5f, 0), AccentCyan,  matAccent, bench.transform);
             var cableB = MakeCable("CableB", new Vector3(0.7f,  0.5f, 0), AccentAmber, matAmber,  bench.transform);
 
-            // Dial console (west wall)
-            var dialBase = MakeBox("DialBase", new Vector3(-W/2 + 0.15f, 1.2f, 0), new Vector3(0.1f, 0.8f, 0.8f), MakeMat("DialBase", new Color(0.10f, 0.12f, 0.15f), 0.3f), room);
+            // Dial console (west wall). Anchored so the disc and pointer
+            // aren't compressed along X by the (0.1, 0.8, 0.8) console scale.
+            var dialBase = MakeAnchoredBox("DialBase", new Vector3(-W/2 + 0.15f, 1.2f, 0), new Vector3(0.1f, 0.8f, 0.8f), MakeMat("DialBase", new Color(0.10f, 0.12f, 0.15f), 0.3f), room);
+            // DialBase is now an anchor; its visual cube is a child. The disc sits
+            // 0.06 m east of the anchor (on the front of the console facing the
+            // player), oriented as a horizontal disc thanks to the Z-90 rotation.
             var dialDisc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             dialDisc.name = "DialDisc";
             dialDisc.transform.SetParent(dialBase.transform, false);
-            dialDisc.transform.localPosition = new Vector3(0.07f, 0, 0);
-            dialDisc.transform.localScale = new Vector3(0.5f, 0.05f, 0.5f);
+            dialDisc.transform.localPosition = new Vector3(0.06f, 0, 0);
+            // 30 cm diameter, 4 cm thick disc, lying on its X-axis face.
+            dialDisc.transform.localScale = new Vector3(0.30f, 0.04f, 0.30f);
             dialDisc.transform.localRotation = Quaternion.Euler(0, 0, 90);
             dialDisc.GetComponent<Renderer>().sharedMaterial = MakeMat("Dial", new Color(0.5f, 0.5f, 0.55f), 0.7f);
-            var dialPointer = MakeBox("Pointer", new Vector3(0.13f, 0, 0), new Vector3(0.04f, 0.30f, 0.06f), matRed, dialBase.transform);
+            // 12 cm pointer that rotates around the disc face.
+            var dialPointer = MakeBox("Pointer", new Vector3(0.10f, 0, 0), new Vector3(0.02f, 0.12f, 0.03f), matRed, dialBase.transform);
             dialBase.AddComponent<Highlightable>();
             var dial = dialBase.AddComponent<Dial>();
             var dlo = new SerializedObject(dial);
@@ -506,9 +547,12 @@ namespace HCITrilogy.Lockdown.EditorTools
             dlo.FindProperty("inputActions").objectReferenceValue = inputAsset;
             dlo.ApplyModifiedPropertiesWithoutUndo();
 
-            // Door (south wall, but exit through it = north wall to be consistent narrative; using north)
-            var doorFrame = MakeBox("DoorFrame", new Vector3(0, 1.1f, -D/2 + 0.05f), new Vector3(2.2f, 2.2f, 0.05f), MakeMat("DoorFrame", new Color(0.10f, 0.10f, 0.12f), 0.4f), room);
-            var doorPanel = MakeBox("DoorPanel", new Vector3(0, 0, 0), new Vector3(2.0f, 2.0f, 0.06f), MakeMat("DoorPanel", new Color(0.13f, 0.18f, 0.22f), 0.5f), doorFrame.transform);
+            // Door (north wall). The frame is an anchor so the panel doesn't
+            // inherit (2.2 * 2.0)m = 4.4m world width; the panel is also an
+            // anchor so DoorLock's Slide can translate it cleanly along local
+            // X without the parent's scale inflating the slide distance.
+            var doorFrame = MakeAnchoredBox("DoorFrame", new Vector3(0, 1.1f, -D/2 + 0.05f), new Vector3(2.2f, 2.2f, 0.05f), MakeMat("DoorFrame", new Color(0.10f, 0.10f, 0.12f), 0.4f), room);
+            var doorPanel = MakeAnchoredBox("DoorPanel", new Vector3(0, 0, 0), new Vector3(2.0f, 2.0f, 0.06f), MakeMat("DoorPanel", new Color(0.13f, 0.18f, 0.22f), 0.5f), doorFrame.transform);
             doorPanel.AddComponent<Highlightable>();
             var doorLock = doorPanel.AddComponent<DoorLock>();
             // Door slides on local X axis (frame is rotated so X is horizontal across door).
