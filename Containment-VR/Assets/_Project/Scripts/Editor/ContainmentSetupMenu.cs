@@ -511,10 +511,34 @@ namespace HCITrilogy.Containment.EditorTools
             trt.anchorMin = new Vector2(0.5f, 0.50f); trt.anchorMax = new Vector2(0.5f, 0.50f);
             trt.sizeDelta = new Vector2(800, 90); trt.anchoredPosition = Vector2.zero;
 
+            // Retry / Menu buttons (driven by VR ray interactor + uGUI Button).
+            Button MakeBtn(string label, Vector2 anchor)
+            {
+                var bGO = new GameObject("Btn_" + label, typeof(Image), typeof(Button));
+                bGO.transform.SetParent(canvasGO.transform, false);
+                bGO.GetComponent<Image>().color = new Color(0.10f, 0.12f, 0.15f);
+                var brt = (RectTransform)bGO.transform;
+                brt.anchorMin = anchor; brt.anchorMax = anchor;
+                brt.sizeDelta = new Vector2(360, 96);
+                brt.anchoredPosition = Vector2.zero;
+                var t = new GameObject("Text").AddComponent<Text>();
+                t.transform.SetParent(bGO.transform, false);
+                t.text = label; t.font = font; t.fontSize = 32;
+                t.alignment = TextAnchor.MiddleCenter; t.color = Color.white;
+                var ttrt = t.rectTransform;
+                ttrt.anchorMin = Vector2.zero; ttrt.anchorMax = Vector2.one;
+                ttrt.offsetMin = ttrt.offsetMax = Vector2.zero;
+                return bGO.GetComponent<Button>();
+            }
+            var retryBtn = MakeBtn(LocalizationStrings.BtnRetry, new Vector2(0.32f, 0.30f));
+            var menuBtn  = MakeBtn(LocalizationStrings.BtnMenu,  new Vector2(0.68f, 0.30f));
+
             var rs = canvasGO.AddComponent<ResultsScreen>();
             var rso = new SerializedObject(rs);
             rso.FindProperty("timeText").objectReferenceValue = timeText;
             rso.FindProperty("resultText").objectReferenceValue = resText;
+            rso.FindProperty("retryButton").objectReferenceValue = retryBtn;
+            rso.FindProperty("menuButton").objectReferenceValue = menuBtn;
             rso.ApplyModifiedPropertiesWithoutUndo();
 
             EnsureEventSystem();

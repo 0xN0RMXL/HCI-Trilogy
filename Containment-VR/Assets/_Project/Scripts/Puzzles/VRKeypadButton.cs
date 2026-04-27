@@ -22,13 +22,21 @@ namespace HCITrilogy.Containment.Puzzles
 
         private XRSimpleInteractable _i;
         private Vector3 _restPos;
+        private UnityEngine.Events.UnityAction<UnityEngine.XR.Interaction.Toolkit.SelectEnterEventArgs> _onSelect;
 
         private void Awake()
         {
             _i = GetComponent<XRSimpleInteractable>();
             if (visual == null) visual = transform;
             _restPos = visual.localPosition;
-            _i.selectEntered.AddListener(_ => OnPress());
+            _onSelect = _ => OnPress();
+            _i.selectEntered.AddListener(_onSelect);
+        }
+
+        private void OnDestroy()
+        {
+            if (_i == null || _onSelect == null) return;
+            _i.selectEntered.RemoveListener(_onSelect);
         }
 
         private void OnPress()

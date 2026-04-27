@@ -38,6 +38,13 @@ namespace HCITrilogy.Containment.Puzzles
             _grab.selectExited.AddListener(OnRelease);
         }
 
+        private void OnDestroy()
+        {
+            if (_grab == null) return;
+            _grab.selectEntered.RemoveListener(OnGrab);
+            _grab.selectExited.RemoveListener(OnRelease);
+        }
+
         private void OnGrab(SelectEnterEventArgs e)
         {
             _gripT = e.interactorObject.transform;

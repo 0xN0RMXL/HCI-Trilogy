@@ -140,7 +140,16 @@ namespace HCITrilogy.Signal.EditorTools
             // Persistent managers root.
             var managers = new GameObject("[Managers]");
             managers.AddComponent<SettingsManager>();
-            managers.AddComponent<PauseController>();
+            var pauseCtrl = managers.AddComponent<PauseController>();
+            // Wire the InputActionAsset so Esc actually triggers pause.
+            var actions = AssetDatabase.LoadAssetAtPath<UnityEngine.InputSystem.InputActionAsset>(
+                SettingsFolder + "/PlayerInput.inputactions");
+            if (actions != null)
+            {
+                var pcSO = new SerializedObject(pauseCtrl);
+                pcSO.FindProperty("inputActions").objectReferenceValue = actions;
+                pcSO.ApplyModifiedPropertiesWithoutUndo();
+            }
             var sceneFlow = new GameObject("[SceneFlow]");
             sceneFlow.AddComponent<SceneFlow>();
             // Bootstrapper transitions to MainMenu.
@@ -520,7 +529,9 @@ namespace HCITrilogy.Signal.EditorTools
             if (Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() != null) return;
             var es = new GameObject("EventSystem");
             es.AddComponent<UnityEngine.EventSystems.EventSystem>();
-            es.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            // Use the new Input System UI module so menus respond to mouse/keyboard
+            // when Active Input Handling = "Input System Package (New)".
+            es.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
         }
 
         private static void AddScenesToBuildSettings()

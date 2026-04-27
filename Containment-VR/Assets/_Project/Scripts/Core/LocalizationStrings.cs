@@ -8,5 +8,7 @@ namespace HCITrilogy.Containment.Core
         public const string BtnSettings = "SETTINGS";
         public const string BtnCredits  = "CREDITS";
         public const string BtnQuit     = "QUIT";
+        public const string BtnRetry    = "RETRY";
+        public const string BtnMenu     = "MENU";
     }
 }

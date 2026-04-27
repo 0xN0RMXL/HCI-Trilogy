@@ -15,7 +15,9 @@ namespace HCITrilogy.Lockdown.UI
 
         private void Start()
         {
-            _runStarted = Time.unscaledTime;
+            // Time.time pauses with timeScale=0, matching OxygenTimer's
+            // Time.deltaTime accounting so escape time doesn't inflate during pause.
+            _runStarted = Time.time;
             if (door != null) door.OnUnlocked += OnEscape;
             if (timer != null) timer.OnExpired += OnFail;
         }
@@ -24,7 +26,7 @@ namespace HCITrilogy.Lockdown.UI
         {
             if (_ended) return;
             _ended = true;
-            ResultsScreen.LastEscapeSeconds = Time.unscaledTime - _runStarted;
+            ResultsScreen.LastEscapeSeconds = Time.time - _runStarted;
             ResultsScreen.LastSuccess = true;
             Invoke(nameof(GoResults), 1.6f);
         }
@@ -33,7 +35,7 @@ namespace HCITrilogy.Lockdown.UI
         {
             if (_ended) return;
             _ended = true;
-            ResultsScreen.LastEscapeSeconds = Time.unscaledTime - _runStarted;
+            ResultsScreen.LastEscapeSeconds = Time.time - _runStarted;
             ResultsScreen.LastSuccess = false;
             Invoke(nameof(GoResults), 1.0f);
         }

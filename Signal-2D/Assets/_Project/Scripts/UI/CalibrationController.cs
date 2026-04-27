@@ -37,7 +37,27 @@ namespace HCITrilogy.Signal.UI
             if (acceptButton != null) acceptButton.onClick.AddListener(OnAccept);
             if (retestButton != null) retestButton.onClick.AddListener(StartTest);
             if (backButton   != null) backButton.onClick.AddListener(OnBack);
+            // Fall back to a procedural click if no clip is wired so the
+            // calibration scene works out of the box.
+            if (clickClip == null) clickClip = GenerateClickClip();
             StartTest();
+        }
+
+        // Short percussive click: 2 kHz sine with 30 ms exponential decay.
+        private static AudioClip GenerateClickClip()
+        {
+            const int sampleRate = 44100;
+            const int samples = (int)(sampleRate * 0.05f); // 50 ms
+            var data = new float[samples];
+            for (int i = 0; i < samples; i++)
+            {
+                float t = i / (float)sampleRate;
+                float env = Mathf.Exp(-t * 90f);          // fast decay
+                data[i] = Mathf.Sin(2f * Mathf.PI * 2000f * t) * env * 0.6f;
+            }
+            var clip = AudioClip.Create("ProceduralClick", samples, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
         }
 
         private void Update()

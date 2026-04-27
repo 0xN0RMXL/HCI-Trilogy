@@ -51,7 +51,8 @@ namespace HCITrilogy.Lockdown.Puzzles
         public void Interact(Interactor by)
         {
             _engaged = !_engaged;
-            if (!_engaged) Confirm();
+            if (_engaged) _engagedTime = Time.unscaledTime;
+            else Confirm();
         }
 
         private void Update()
