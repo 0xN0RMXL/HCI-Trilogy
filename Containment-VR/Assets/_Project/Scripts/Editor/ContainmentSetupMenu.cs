@@ -159,15 +159,15 @@ namespace HCITrilogy.Containment.EditorTools
             var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
             // World-space canvas with two big buttons. The XR Ray Interactor
-            // (added via the XR Origin) will hit-test these and drive uGUI.
-            // NOTE: For VR ray-targeting, add `TrackedDeviceGraphicRaycaster`
-            // to this canvas in the Inspector after XRIT is imported.
+            // (added via the XR Origin) will hit-test these and drive uGUI
+            // through the TrackedDeviceGraphicRaycaster added below.
             var canvasGO = new GameObject("VRMenuCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             var canvas = canvasGO.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvasGO.transform.position = new Vector3(0, 1.5f, 1.5f);
             canvasGO.transform.localScale = Vector3.one * 0.005f;
             canvasGO.GetComponent<RectTransform>().sizeDelta = new Vector2(900, 600);
+            AddVRRaycaster(canvasGO);
 
             var bg = new GameObject("BG").AddComponent<Image>();
             bg.transform.SetParent(canvasGO.transform, false);
@@ -523,6 +523,7 @@ namespace HCITrilogy.Containment.EditorTools
             canvasGO.transform.position = new Vector3(0, 1.5f, 1.5f);
             canvasGO.transform.localScale = Vector3.one * 0.005f;
             ((RectTransform)canvasGO.transform).sizeDelta = new Vector2(900, 600);
+            AddVRRaycaster(canvasGO);
 
             var bg = new GameObject("BG").AddComponent<Image>();
             bg.transform.SetParent(canvasGO.transform, false);
@@ -584,6 +585,29 @@ namespace HCITrilogy.Containment.EditorTools
         }
 
         // ---------- Common helpers ----------
+
+        /// <summary>
+        /// Reflectively adds XRIT's TrackedDeviceGraphicRaycaster to the canvas
+        /// so XR ray interactors can drive uGUI buttons. Uses reflection so
+        /// this Editor script still compiles even if XRIT is absent — in that
+        /// case the regular GraphicRaycaster suffices for desktop/editor mouse
+        /// hit-testing and a warning is printed.
+        /// </summary>
+        private static void AddVRRaycaster(GameObject canvasGO)
+        {
+            var t = System.Type.GetType(
+                "UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster, Unity.XR.Interaction.Toolkit",
+                throwOnError: false);
+            if (t != null)
+            {
+                canvasGO.AddComponent(t);
+            }
+            else
+            {
+                Debug.LogWarning("[HCI Containment] TrackedDeviceGraphicRaycaster not found — XR rays won't hit UI. " +
+                                 "Install the XR Interaction Toolkit package, then add it to '" + canvasGO.name + "' in the Inspector.");
+            }
+        }
 
         private static void EnsureEventSystem()
         {
