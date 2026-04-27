@@ -8,6 +8,8 @@ namespace HCITrilogy.Containment.UI
     {
         [SerializeField] private Text timeText;
         [SerializeField] private Text resultText;
+        [SerializeField] private Button retryButton;
+        [SerializeField] private Button menuButton;
         public static float LastEscapeSeconds;
         public static bool LastSuccess;
 
@@ -17,9 +19,20 @@ namespace HCITrilogy.Containment.UI
             int sec = Mathf.FloorToInt(LastEscapeSeconds % 60f);
             if (timeText)   timeText.text   = $"{min:00}:{sec:00}";
             if (resultText) resultText.text = LastSuccess ? "ESCAPED" : "FAILED";
+            if (retryButton) retryButton.onClick.AddListener(OnRetryButton);
+            if (menuButton)  menuButton.onClick.AddListener(OnMenuButton);
         }
 
-        public void OnRetryButton() => SceneFlow.Instance?.LoadAsync("Lab");
-        public void OnMenuButton()  => SceneFlow.Instance?.LoadAsync("MainMenu");
+        public void OnRetryButton()
+        {
+            if (SceneFlow.Instance != null) SceneFlow.Instance.LoadAsync("Lab");
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("Lab");
+        }
+
+        public void OnMenuButton()
+        {
+            if (SceneFlow.Instance != null) SceneFlow.Instance.LoadAsync("MainMenu");
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+        }
     }
 }

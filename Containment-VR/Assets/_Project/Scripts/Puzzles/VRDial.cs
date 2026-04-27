@@ -39,6 +39,13 @@ namespace HCITrilogy.Containment.Puzzles
             _i.selectExited.AddListener(OnRelease);
         }
 
+        private void OnDestroy()
+        {
+            if (_i == null) return;
+            _i.selectEntered.RemoveListener(OnGrab);
+            _i.selectExited.RemoveListener(OnRelease);
+        }
+
         private void OnGrab(SelectEnterEventArgs e)
         {
             if (Solved) return;

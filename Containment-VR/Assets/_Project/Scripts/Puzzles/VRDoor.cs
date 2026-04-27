@@ -35,6 +35,11 @@ namespace HCITrilogy.Containment.Puzzles
             if (state != null) state.OnAllSolved += BeginOpen;
         }
 
+        private void OnDestroy()
+        {
+            if (state != null) state.OnAllSolved -= BeginOpen;
+        }
+
         private void BeginOpen()
         {
             if (_opening) return;
