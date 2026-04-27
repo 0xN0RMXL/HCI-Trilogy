@@ -1,0 +1,33 @@
+{
+    "name": "PlayerInput",
+    "maps": [
+        {
+            "name": "Gameplay",
+            "id": "5b2f8a1c-1101-4ab8-9c55-aaa000111000",
+            "actions": [
+                { "name": "Lane0", "type": "Button", "id": "11111111-0000-0000-0000-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Lane1", "type": "Button", "id": "11111111-0000-0000-0000-000000000002", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Lane2", "type": "Button", "id": "11111111-0000-0000-0000-000000000003", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Lane3", "type": "Button", "id": "11111111-0000-0000-0000-000000000004", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Pause", "type": "Button", "id": "11111111-0000-0000-0000-000000000099", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+            ],
+            "bindings": [
+                { "name": "", "id": "22222222-0000-0000-0000-000000000001", "path": "<Keyboard>/d", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Lane0", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "22222222-0000-0000-0000-000000000002", "path": "<Keyboard>/f", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Lane1", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "22222222-0000-0000-0000-000000000003", "path": "<Keyboard>/j", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Lane2", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "22222222-0000-0000-0000-000000000004", "path": "<Keyboard>/k", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Lane3", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "22222222-0000-0000-0000-000000000099", "path": "<Keyboard>/escape", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Pause", "isComposite": false, "isPartOfComposite": false }
+            ]
+        }
+    ],
+    "controlSchemes": [
+        {
+            "name": "Keyboard&Mouse",
+            "bindingGroup": "Keyboard&Mouse",
+            "devices": [
+                { "devicePath": "<Keyboard>", "isOptional": false, "isOR": false },
+                { "devicePath": "<Mouse>", "isOptional": true, "isOR": false }
+            ]
+        }
+    ]
+}
