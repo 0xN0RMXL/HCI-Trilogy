@@ -538,24 +538,26 @@ namespace HCITrilogy.Lockdown.EditorTools
             dialDisc.transform.localScale = new Vector3(0.30f, 0.04f, 0.30f);
             dialDisc.transform.localRotation = Quaternion.Euler(0, 0, 90);
             dialDisc.GetComponent<Renderer>().sharedMaterial = MakeMat("Dial", new Color(0.5f, 0.5f, 0.55f), 0.7f);
-            // Pointer pivot sits at the disc center; the visual pointer extends
-            // along +Z from the pivot. Rotating the pivot's Y angle then sweeps
-            // the visual around the disc center (instead of spinning a bar in
-            // place at an offset, which was the original behaviour).
+            // Two-level pivot hierarchy:
+            //   PointerPivot   — fixed Z=90 so its local +Y aligns with the
+            //                    disc's axis (world -X). Never modified at runtime.
+            //   PointerYaw     — identity rotation; Dial.Update sets its
+            //                    localEulerAngles each frame (Vector3(0, angle, 0)).
+            // This keeps the disc-axis alignment baked into the outer pivot so
+            // the runtime overwrite of `pointer.localEulerAngles` doesn't lose it.
             var pointerPivot = new GameObject("PointerPivot");
             pointerPivot.transform.SetParent(dialBase.transform, false);
             // Pivot sits 2 cm east of the disc's east face (disc center 0.06 + half-thickness 0.02 + 0.02 clearance).
             pointerPivot.transform.localPosition = new Vector3(0.10f, 0, 0);
-            // Rotate the pivot 90° on Z so its local +Y axis points along the
-            // disc's axis (world -X). Rotating around local Y then sweeps the
-            // visual around the disc's axis — exactly what an indicator arm does.
             pointerPivot.transform.localRotation = Quaternion.Euler(0, 0, 90);
+            var pointerYaw = new GameObject("PointerYaw");
+            pointerYaw.transform.SetParent(pointerPivot.transform, false);
             var dialPointer = MakeBox("Pointer", new Vector3(0, 0, 0.06f),
-                new Vector3(0.02f, 0.02f, 0.12f), matRed, pointerPivot.transform);
+                new Vector3(0.02f, 0.02f, 0.12f), matRed, pointerYaw.transform);
             dialBase.AddComponent<Highlightable>();
             var dial = dialBase.AddComponent<Dial>();
             var dlo = new SerializedObject(dial);
-            dlo.FindProperty("pointer").objectReferenceValue = pointerPivot.transform;
+            dlo.FindProperty("pointer").objectReferenceValue = pointerYaw.transform;
             dlo.FindProperty("inputActions").objectReferenceValue = inputAsset;
             dlo.ApplyModifiedPropertiesWithoutUndo();
 

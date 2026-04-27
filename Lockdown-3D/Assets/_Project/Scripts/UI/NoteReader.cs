@@ -29,7 +29,17 @@ namespace HCITrilogy.Lockdown.UI
         private void Awake()
         {
             Instance = this;
+            // Static so it survives scene reloads. Reset here so a Lab→Results
+            // transition that happened with a note open (timer expired while
+            // the note overlay was up) doesn't soft-lock the next Lab attempt
+            // by leaving Interactor permanently gated on IsOpen == true.
+            IsOpen = false;
             if (panel) panel.SetActive(false);
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) { Instance = null; IsOpen = false; }
         }
 
         private static FirstPersonController GetFpc()
