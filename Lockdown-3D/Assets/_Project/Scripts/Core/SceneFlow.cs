@@ -43,6 +43,9 @@ namespace HCITrilogy.Lockdown.Core
         private IEnumerator Run(string scene)
         {
             _loading = true;
+            // Defensive: ensure we leave any prior pause behind so the next
+            // scene's UI animations/coroutines run at normal speed.
+            Time.timeScale = 1f;
             yield return Fade(0, 1);
             var op = SceneManager.LoadSceneAsync(scene);
             while (op is { isDone: false }) yield return null;

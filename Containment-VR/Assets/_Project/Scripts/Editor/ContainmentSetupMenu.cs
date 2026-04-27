@@ -368,8 +368,16 @@ namespace HCITrilogy.Containment.EditorTools
             dialDisc.transform.localRotation = Quaternion.Euler(0, 0, 90);
             dialDisc.GetComponent<Renderer>().sharedMaterial = MakeMat("Dial",
                 new Color(0.5f, 0.5f, 0.55f), 0.7f);
-            var dialPointer = MakeBox("Pointer", new Vector3(0.10f, 0, 0),
-                new Vector3(0.02f, 0.12f, 0.03f), matRed, dialBase.transform);
+            // Pointer pivot at the east edge of the disc; the visual extends
+            // along the pivot's local +Z so that rotating the pivot's local Y
+            // sweeps the arm around the disc's face instead of spinning the
+            // bar in place at an offset.
+            var pointerPivot = new GameObject("PointerPivot");
+            pointerPivot.transform.SetParent(dialBase.transform, false);
+            pointerPivot.transform.localPosition = new Vector3(0.10f, 0, 0);
+            pointerPivot.transform.localRotation = Quaternion.Euler(0, 0, 90);
+            var dialPointer = MakeBox("Pointer", new Vector3(0, 0, 0.06f),
+                new Vector3(0.02f, 0.02f, 0.12f), matRed, pointerPivot.transform);
             // Make the disc grabbable.
             var dialRb = dialDisc.AddComponent<Rigidbody>();
             dialRb.isKinematic = true; dialRb.useGravity = false;
@@ -377,7 +385,7 @@ namespace HCITrilogy.Containment.EditorTools
             var dial = dialDisc.AddComponent<VRDial>();
             dialDisc.AddComponent<HapticBus>();
             var dlo = new SerializedObject(dial);
-            dlo.FindProperty("pointer").objectReferenceValue = dialPointer.transform;
+            dlo.FindProperty("pointer").objectReferenceValue = pointerPivot.transform;
             dlo.ApplyModifiedPropertiesWithoutUndo();
 
             // Door (north wall). Frame + panel both anchored so VRDoor's slide

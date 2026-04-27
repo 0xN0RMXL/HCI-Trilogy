@@ -42,9 +42,9 @@ namespace HCITrilogy.Lockdown.UI
         public static void Show(string title, string body)
         {
             if (Instance == null) return;
-            Instance.titleText.text = title;
-            Instance.bodyText.text = body;
-            Instance.panel.SetActive(true);
+            if (Instance.titleText != null) Instance.titleText.text = title;
+            if (Instance.bodyText != null) Instance.bodyText.text = body;
+            if (Instance.panel != null) Instance.panel.SetActive(true);
             IsOpen = true;
             // Freeze player look/move without flipping the global pause flag,
             // which would also pop the PauseMenu over the note overlay.
@@ -57,7 +57,7 @@ namespace HCITrilogy.Lockdown.UI
         public static void Hide()
         {
             if (Instance == null) return;
-            Instance.panel.SetActive(false);
+            if (Instance.panel != null) Instance.panel.SetActive(false);
             IsOpen = false;
             var fpc = GetFpc();
             if (fpc != null) fpc.ControlEnabled = true;
@@ -67,7 +67,7 @@ namespace HCITrilogy.Lockdown.UI
 
         private void Update()
         {
-            if (!panel.activeSelf) return;
+            if (panel == null || !panel.activeSelf) return;
             if (Keyboard.current != null &&
                 (Keyboard.current.escapeKey.wasPressedThisFrame ||
                  Keyboard.current.eKey.wasPressedThisFrame ||

@@ -538,12 +538,24 @@ namespace HCITrilogy.Lockdown.EditorTools
             dialDisc.transform.localScale = new Vector3(0.30f, 0.04f, 0.30f);
             dialDisc.transform.localRotation = Quaternion.Euler(0, 0, 90);
             dialDisc.GetComponent<Renderer>().sharedMaterial = MakeMat("Dial", new Color(0.5f, 0.5f, 0.55f), 0.7f);
-            // 12 cm pointer that rotates around the disc face.
-            var dialPointer = MakeBox("Pointer", new Vector3(0.10f, 0, 0), new Vector3(0.02f, 0.12f, 0.03f), matRed, dialBase.transform);
+            // Pointer pivot sits at the disc center; the visual pointer extends
+            // along +Z from the pivot. Rotating the pivot's Y angle then sweeps
+            // the visual around the disc center (instead of spinning a bar in
+            // place at an offset, which was the original behaviour).
+            var pointerPivot = new GameObject("PointerPivot");
+            pointerPivot.transform.SetParent(dialBase.transform, false);
+            // Pivot sits 2 cm east of the disc's east face (disc center 0.06 + half-thickness 0.02 + 0.02 clearance).
+            pointerPivot.transform.localPosition = new Vector3(0.10f, 0, 0);
+            // Rotate the pivot 90° on Z so its local +Y axis points along the
+            // disc's axis (world -X). Rotating around local Y then sweeps the
+            // visual around the disc's axis — exactly what an indicator arm does.
+            pointerPivot.transform.localRotation = Quaternion.Euler(0, 0, 90);
+            var dialPointer = MakeBox("Pointer", new Vector3(0, 0, 0.06f),
+                new Vector3(0.02f, 0.02f, 0.12f), matRed, pointerPivot.transform);
             dialBase.AddComponent<Highlightable>();
             var dial = dialBase.AddComponent<Dial>();
             var dlo = new SerializedObject(dial);
-            dlo.FindProperty("pointer").objectReferenceValue = dialPointer.transform;
+            dlo.FindProperty("pointer").objectReferenceValue = pointerPivot.transform;
             dlo.FindProperty("inputActions").objectReferenceValue = inputAsset;
             dlo.ApplyModifiedPropertiesWithoutUndo();
 

@@ -15,23 +15,28 @@ namespace HCITrilogy.Lockdown.Puzzles
         [SerializeField] private CableSocket socketA;
         [SerializeField] private CableSocket socketB;
 
-        public bool KeypadSolved { get; private set; }
-        public bool DialSolved   { get; private set; }
-        public bool SocketASolved { get; private set; }
-        public bool SocketBSolved { get; private set; }
+        // Backing fields, not auto-properties: an auto-property cannot be
+        // passed by ref (CS0206), and the original Set(ref _, name) helper
+        // requires a real field.
+        private bool _keypadSolved, _dialSolved, _socketASolved, _socketBSolved;
+
+        public bool KeypadSolved  => _keypadSolved;
+        public bool DialSolved    => _dialSolved;
+        public bool SocketASolved => _socketASolved;
+        public bool SocketBSolved => _socketBSolved;
 
         public bool AllSolved =>
-            KeypadSolved && DialSolved && SocketASolved && SocketBSolved;
+            _keypadSolved && _dialSolved && _socketASolved && _socketBSolved;
 
         public event Action OnAllSolved;
         public event Action<string> OnPuzzleSolved;
 
         private void Start()
         {
-            if (keypad != null)  keypad.OnAccepted += () => Set(ref KeypadSolved, "Keypad");
-            if (dial != null)    dial.OnAligned   += () => Set(ref DialSolved,   "Dial");
-            if (socketA != null) socketA.OnConnected += () => Set(ref SocketASolved, "Socket-A");
-            if (socketB != null) socketB.OnConnected += () => Set(ref SocketBSolved, "Socket-B");
+            if (keypad != null)  keypad.OnAccepted   += () => Set(ref _keypadSolved,  "Keypad");
+            if (dial != null)    dial.OnAligned      += () => Set(ref _dialSolved,    "Dial");
+            if (socketA != null) socketA.OnConnected += () => Set(ref _socketASolved, "Socket-A");
+            if (socketB != null) socketB.OnConnected += () => Set(ref _socketBSolved, "Socket-B");
         }
 
         private void Set(ref bool flag, string name)

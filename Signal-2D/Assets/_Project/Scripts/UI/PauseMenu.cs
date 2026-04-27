@@ -17,7 +17,8 @@ namespace HCITrilogy.Signal.UI
             if (panel != null) panel.SetActive(false);
             if (settingsPanel != null) settingsPanel.SetActive(false);
             if (resumeButton)   resumeButton.onClick.AddListener(() => PauseController.Instance?.Resume());
-            if (settingsButton) settingsButton.onClick.AddListener(() => settingsPanel.SetActive(!settingsPanel.activeSelf));
+            if (settingsButton && settingsPanel != null)
+                settingsButton.onClick.AddListener(() => settingsPanel.SetActive(!settingsPanel.activeSelf));
             if (menuButton)     menuButton.onClick.AddListener(() => SceneFlow.Instance?.LoadAsync("MainMenu"));
         }
 
