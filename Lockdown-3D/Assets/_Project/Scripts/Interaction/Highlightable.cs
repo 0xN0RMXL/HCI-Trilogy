@@ -4,7 +4,10 @@ using UnityEngine;
 namespace HCITrilogy.Lockdown.Interaction
 {
     /// <summary>
-    /// Optional helper: tint emission/color of all child renderers when hovered.
+    /// Tint child renderers when hovered.
+    /// Uses MaterialPropertyBlock so we don't allocate a per-instance material
+    /// copy — this keeps GPU instancing intact and avoids leaking materials on
+    /// scene unload.
     /// HCI: visual signifier — the looked-at object brightens to confirm focus.
     /// </summary>
     public class Highlightable : MonoBehaviour
@@ -15,13 +18,20 @@ namespace HCITrilogy.Lockdown.Interaction
         private readonly List<Renderer> _renderers = new();
         private readonly List<Color> _baseColors = new();
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private MaterialPropertyBlock _mpb;
         private bool _hover;
 
         private void Awake()
         {
+            _mpb = new MaterialPropertyBlock();
             GetComponentsInChildren(true, _renderers);
             foreach (var r in _renderers)
-                _baseColors.Add(r.material.HasProperty(BaseColorId) ? r.material.GetColor(BaseColorId) : Color.white);
+            {
+                Color baseC = Color.white;
+                if (r != null && r.sharedMaterial != null && r.sharedMaterial.HasProperty(BaseColorId))
+                    baseC = r.sharedMaterial.GetColor(BaseColorId);
+                _baseColors.Add(baseC);
+            }
         }
 
         public void SetHover(bool on)
@@ -31,10 +41,12 @@ namespace HCITrilogy.Lockdown.Interaction
             for (int i = 0; i < _renderers.Count; i++)
             {
                 var r = _renderers[i];
-                if (r == null || !r.material.HasProperty(BaseColorId)) continue;
+                if (r == null) continue;
                 Color baseC = _baseColors[i];
                 Color c = on ? Color.Lerp(baseC, hoverColor, hoverBoost) : baseC;
-                r.material.SetColor(BaseColorId, c);
+                r.GetPropertyBlock(_mpb);
+                _mpb.SetColor(BaseColorId, c);
+                r.SetPropertyBlock(_mpb);
             }
         }
     }

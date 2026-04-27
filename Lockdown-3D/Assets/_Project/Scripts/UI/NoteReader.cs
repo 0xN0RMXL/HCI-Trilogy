@@ -29,6 +29,8 @@ namespace HCITrilogy.Lockdown.UI
             Instance.titleText.text = title;
             Instance.bodyText.text = body;
             Instance.panel.SetActive(true);
+            // Pause the simulation so look/move don't fight the reader overlay.
+            if (PauseController.Instance != null) PauseController.Instance.Pause();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
@@ -37,6 +39,7 @@ namespace HCITrilogy.Lockdown.UI
         {
             if (Instance == null) return;
             Instance.panel.SetActive(false);
+            if (PauseController.Instance != null) PauseController.Instance.Resume();
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
