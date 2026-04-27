@@ -2,12 +2,17 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using HCITrilogy.Lockdown.Core;
+using HCITrilogy.Lockdown.Player;
 
 namespace HCITrilogy.Lockdown.UI
 {
     /// <summary>
     /// Full-screen overlay for paper notes. Static Show()/Hide() so any item
     /// can call from anywhere.
+    /// Note: we deliberately do NOT call PauseController.Pause() here because
+    /// the PauseMenu also subscribes to OnPauseChanged and would render its
+    /// own overlay on top of the note. Instead we freeze look/move by toggling
+    /// FirstPersonController.ControlEnabled directly.
     /// </summary>
     public class NoteReader : MonoBehaviour
     {
@@ -17,10 +22,21 @@ namespace HCITrilogy.Lockdown.UI
         [SerializeField] private Text titleText;
         [SerializeField] private Text bodyText;
 
+        public static bool IsOpen { get; private set; }
+
+        private static FirstPersonController _cachedFpc;
+
         private void Awake()
         {
             Instance = this;
             if (panel) panel.SetActive(false);
+        }
+
+        private static FirstPersonController GetFpc()
+        {
+            if (_cachedFpc != null) return _cachedFpc;
+            _cachedFpc = Object.FindFirstObjectByType<FirstPersonController>();
+            return _cachedFpc;
         }
 
         public static void Show(string title, string body)
@@ -29,8 +45,11 @@ namespace HCITrilogy.Lockdown.UI
             Instance.titleText.text = title;
             Instance.bodyText.text = body;
             Instance.panel.SetActive(true);
-            // Pause the simulation so look/move don't fight the reader overlay.
-            if (PauseController.Instance != null) PauseController.Instance.Pause();
+            IsOpen = true;
+            // Freeze player look/move without flipping the global pause flag,
+            // which would also pop the PauseMenu over the note overlay.
+            var fpc = GetFpc();
+            if (fpc != null) fpc.ControlEnabled = false;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
@@ -39,7 +58,9 @@ namespace HCITrilogy.Lockdown.UI
         {
             if (Instance == null) return;
             Instance.panel.SetActive(false);
-            if (PauseController.Instance != null) PauseController.Instance.Resume();
+            IsOpen = false;
+            var fpc = GetFpc();
+            if (fpc != null) fpc.ControlEnabled = true;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }

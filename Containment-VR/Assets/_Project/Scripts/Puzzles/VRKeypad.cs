@@ -53,7 +53,10 @@ namespace HCITrilogy.Containment.Puzzles
             var prev = statusLight.color;
             statusLight.color = new Color(1f, 0.36f, 0.36f);
             yield return new WaitForSeconds(0.6f);
-            statusLight.color = prev;
+            // If the puzzle was solved during the flash, leave the green color
+            // set by the accept path alone instead of stomping it with the
+            // pre-flash color.
+            if (!Solved) statusLight.color = prev;
         }
     }
 }
