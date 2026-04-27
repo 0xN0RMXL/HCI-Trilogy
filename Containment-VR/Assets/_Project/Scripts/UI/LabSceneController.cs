@@ -20,6 +20,12 @@ namespace HCITrilogy.Containment.UI
             if (timer != null) timer.OnExpired += OnFail;
         }
 
+        private void OnDestroy()
+        {
+            if (door != null)  door.OnOpened -= OnEscape;
+            if (timer != null) timer.OnExpired -= OnFail;
+        }
+
         private void OnEscape()
         {
             if (_ended) return;

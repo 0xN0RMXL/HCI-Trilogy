@@ -26,6 +26,8 @@ namespace HCITrilogy.Containment.Core
         private IEnumerator Run(string scene)
         {
             _loading = true;
+            // Defensive: ensure timeScale isn't left at 0 from a prior pause.
+            Time.timeScale = 1f;
             // VR fade-to-black is handled by the XR Origin's tunneling/vignette
             // layer when present; here we simply yield while loading.
             var op = SceneManager.LoadSceneAsync(scene);

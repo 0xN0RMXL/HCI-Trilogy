@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using HCITrilogy.Lockdown.Core;
+using HCITrilogy.Lockdown.UI;
 
 namespace HCITrilogy.Lockdown.Interaction
 {
@@ -45,6 +46,9 @@ namespace HCITrilogy.Lockdown.Interaction
         private void Update()
         {
             if (PauseController.Instance != null && PauseController.Instance.IsPaused) return;
+            // While a paper note is open the player has no view control and
+            // shouldn't be able to interact through the overlay.
+            if (NoteReader.IsOpen) { crosshair?.SetPrompt(null); return; }
             UpdateRay();
             if (_interact != null && _interact.WasPressedThisFrame() && _hovered != null && _hovered.IsAvailable)
                 _hovered.Interact(this);

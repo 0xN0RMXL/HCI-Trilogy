@@ -120,6 +120,25 @@ namespace HCITrilogy.Containment.EditorTools
             return g;
         }
 
+        /// <summary>
+        /// Returns an empty anchor at `pos` with a unit-scaled child cube of
+        /// `scale` as its visual. Children added to the returned object inherit
+        /// position/rotation only — no scale-propagation skew. Use this for any
+        /// container that will have meaningful child geometry.
+        /// </summary>
+        private static GameObject MakeAnchoredBox(string name, Vector3 pos, Vector3 scale, Material mat, Transform parent)
+        {
+            var anchor = new GameObject(name);
+            anchor.transform.SetParent(parent, false);
+            anchor.transform.localPosition = pos;
+            var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            visual.name = name + "_Visual";
+            visual.transform.SetParent(anchor.transform, false);
+            visual.transform.localScale = scale;
+            if (mat != null) visual.GetComponent<Renderer>().sharedMaterial = mat;
+            return anchor;
+        }
+
         // ---------- Boot ----------
 
         private static void CreateBootScene()
@@ -140,15 +159,15 @@ namespace HCITrilogy.Containment.EditorTools
             var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
             // World-space canvas with two big buttons. The XR Ray Interactor
-            // (added via the XR Origin) will hit-test these and drive uGUI.
-            // NOTE: For VR ray-targeting, add `TrackedDeviceGraphicRaycaster`
-            // to this canvas in the Inspector after XRIT is imported.
+            // (added via the XR Origin) will hit-test these and drive uGUI
+            // through the TrackedDeviceGraphicRaycaster added below.
             var canvasGO = new GameObject("VRMenuCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             var canvas = canvasGO.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvasGO.transform.position = new Vector3(0, 1.5f, 1.5f);
             canvasGO.transform.localScale = Vector3.one * 0.005f;
             canvasGO.GetComponent<RectTransform>().sizeDelta = new Vector2(900, 600);
+            AddVRRaycaster(canvasGO);
 
             var bg = new GameObject("BG").AddComponent<Image>();
             bg.transform.SetParent(canvasGO.transform, false);
@@ -238,11 +257,12 @@ namespace HCITrilogy.Containment.EditorTools
             MakeBox("Desk", new Vector3(-W/2 + 1.4f, 0.5f, D/2 - 1.2f),
                 new Vector3(1.4f, 1.0f, 0.7f), deskMat, room);
 
-            // Drawer (grabbable)
-            var drawerHousing = MakeBox("Cabinet",
+            // Drawer (grabbable). Anchored boxes so child geometry isn't
+            // distorted by non-uniform parent scales.
+            var drawerHousing = MakeAnchoredBox("Cabinet",
                 new Vector3(W/2 - 1.0f, 0.5f, D/2 - 1.0f),
                 new Vector3(1.2f, 1.0f, 1.0f), deskMat, room);
-            var drawerBody = MakeBox("DrawerBody", new Vector3(0, 0.05f, 0.15f),
+            var drawerBody = MakeAnchoredBox("DrawerBody", new Vector3(0, 0.05f, 0.15f),
                 new Vector3(0.95f, 0.45f, 0.7f), deskMat, drawerHousing.transform);
             MakeBox("Handle", new Vector3(0, 0.05f, 0.36f),
                 new Vector3(0.30f, 0.05f, 0.04f),
@@ -255,20 +275,24 @@ namespace HCITrilogy.Containment.EditorTools
             vdSO.FindProperty("body").objectReferenceValue = drawerBody.transform;
             vdSO.ApplyModifiedPropertiesWithoutUndo();
 
-            // Keypad (wall, east)
-            var keypadBack = MakeBox("KeypadHousing",
+            // Keypad (wall, east). Anchored housing so the display canvas,
+            // status light, and 12 keys don't inherit the (0.1, 0.6, 0.6)
+            // non-uniform scale of the housing.
+            var keypadBack = MakeAnchoredBox("KeypadHousing",
                 new Vector3(W/2 - 0.15f, 1.4f, -1.5f),
                 new Vector3(0.1f, 0.6f, 0.6f),
                 MakeMat("KeypadBack", new Color(0.10f, 0.12f, 0.15f), 0.3f), room);
 
             var keypad = keypadBack.AddComponent<VRKeypad>();
+            // Housing extents: x in [-0.05, 0.05], y in [-0.30, 0.30], z in [-0.30, 0.30].
+            // Front (west) face is at x = -0.05.
             var displayCanvas = new GameObject("DisplayCanvas", typeof(Canvas), typeof(CanvasScaler));
             displayCanvas.transform.SetParent(keypadBack.transform, false);
             var dc = displayCanvas.GetComponent<Canvas>();
             dc.renderMode = RenderMode.WorldSpace;
-            displayCanvas.transform.localPosition = new Vector3(-0.55f, 0.18f, 0);
+            displayCanvas.transform.localPosition = new Vector3(-0.06f, 0.20f, 0);
             displayCanvas.transform.localRotation = Quaternion.Euler(0, -90, 0);
-            displayCanvas.transform.localScale = Vector3.one * 0.005f;
+            displayCanvas.transform.localScale = Vector3.one * 0.001f;
             var disText = new GameObject("Display").AddComponent<Text>();
             disText.transform.SetParent(displayCanvas.transform, false);
             disText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -279,7 +303,7 @@ namespace HCITrilogy.Containment.EditorTools
 
             var keypadLight = new GameObject("StatusLight").AddComponent<Light>();
             keypadLight.transform.SetParent(keypadBack.transform, false);
-            keypadLight.transform.localPosition = new Vector3(-0.6f, 0.25f, 0);
+            keypadLight.transform.localPosition = new Vector3(-0.08f, 0.25f, 0);
             keypadLight.type = LightType.Point; keypadLight.range = 0.6f; keypadLight.intensity = 1.5f;
             keypadLight.color = AccentRed;
 
@@ -289,19 +313,20 @@ namespace HCITrilogy.Containment.EditorTools
             kSO.FindProperty("statusLight").objectReferenceValue = keypadLight;
             kSO.ApplyModifiedPropertiesWithoutUndo();
 
-            // Buttons (3x4 grid: 1..9, C, 0, blank).
+            // Buttons (3x4 grid: 1..9, C, 0, blank). 4 cm tile keys laid out
+            // on the front face of the housing.
             int[] grid = { 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, 0, -2 };
             for (int i = 0; i < grid.Length; i++)
             {
                 int row = i / 3; int col = i % 3;
                 int v = grid[i];
                 if (v == -2) continue;
-                Vector3 lpos = new(-0.55f, -0.18f - row * 0.10f, -0.16f + col * 0.16f);
+                Vector3 lpos = new(-0.06f, 0.04f - row * 0.08f, -0.12f + col * 0.12f);
                 var bGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 bGO.name = v == -1 ? "Key_C" : $"Key_{v}";
                 bGO.transform.SetParent(keypadBack.transform, false);
                 bGO.transform.localPosition = lpos;
-                bGO.transform.localScale = new Vector3(0.12f, 0.12f, 0.06f);
+                bGO.transform.localScale = new Vector3(0.04f, 0.06f, 0.06f);
                 bGO.GetComponent<Renderer>().sharedMaterial = MakeMat($"Btn_{bGO.name}",
                     v == -1 ? AccentRed : AccentCyan, 0.4f);
                 bGO.AddComponent<XRSimpleInteractable>();
@@ -315,8 +340,9 @@ namespace HCITrilogy.Containment.EditorTools
                 bSO.ApplyModifiedPropertiesWithoutUndo();
             }
 
-            // Cable bench
-            var bench = MakeBox("Bench", new Vector3(0, 0.45f, D/2 - 0.4f),
+            // Cable bench. Anchored so socket housings and cable plugs sit at
+            // their authored sizes.
+            var bench = MakeAnchoredBox("Bench", new Vector3(0, 0.45f, D/2 - 0.4f),
                 new Vector3(2.4f, 0.9f, 0.6f), deskMat, room);
 
             VRCableSocket socketA = MakeSocket("SocketA",
@@ -328,21 +354,32 @@ namespace HCITrilogy.Containment.EditorTools
             VRCable cableB = MakeCable("CableB",
                 new Vector3(0.7f,  0.5f, 0.10f), AccentAmber, matAmber, bench.transform);
 
-            // Dial console (west wall)
-            var dialBase = MakeBox("DialBase",
+            // Dial console (west wall). Anchored so the disc and pointer
+            // aren't compressed along X by the (0.1, 0.8, 0.8) console scale.
+            var dialBase = MakeAnchoredBox("DialBase",
                 new Vector3(-W/2 + 0.15f, 1.2f, 0),
                 new Vector3(0.1f, 0.8f, 0.8f),
                 MakeMat("DialBase", new Color(0.10f, 0.12f, 0.15f), 0.3f), room);
             var dialDisc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             dialDisc.name = "DialDisc";
             dialDisc.transform.SetParent(dialBase.transform, false);
-            dialDisc.transform.localPosition = new Vector3(0.07f, 0, 0);
-            dialDisc.transform.localScale = new Vector3(0.5f, 0.05f, 0.5f);
+            dialDisc.transform.localPosition = new Vector3(0.06f, 0, 0);
+            dialDisc.transform.localScale = new Vector3(0.30f, 0.04f, 0.30f);
             dialDisc.transform.localRotation = Quaternion.Euler(0, 0, 90);
             dialDisc.GetComponent<Renderer>().sharedMaterial = MakeMat("Dial",
                 new Color(0.5f, 0.5f, 0.55f), 0.7f);
-            var dialPointer = MakeBox("Pointer", new Vector3(0.13f, 0, 0),
-                new Vector3(0.04f, 0.30f, 0.06f), matRed, dialBase.transform);
+            // Two-level pivot hierarchy (see Lockdown's matching block for the
+            // full rationale): outer PointerPivot bakes the Z=90 disc-axis
+            // alignment, inner PointerYaw is the transform VRDial.Update
+            // overwrites with `localEulerAngles = (0, angle, 0)` each frame.
+            var pointerPivot = new GameObject("PointerPivot");
+            pointerPivot.transform.SetParent(dialBase.transform, false);
+            pointerPivot.transform.localPosition = new Vector3(0.10f, 0, 0);
+            pointerPivot.transform.localRotation = Quaternion.Euler(0, 0, 90);
+            var pointerYaw = new GameObject("PointerYaw");
+            pointerYaw.transform.SetParent(pointerPivot.transform, false);
+            var dialPointer = MakeBox("Pointer", new Vector3(0, 0, 0.06f),
+                new Vector3(0.02f, 0.02f, 0.12f), matRed, pointerYaw.transform);
             // Make the disc grabbable.
             var dialRb = dialDisc.AddComponent<Rigidbody>();
             dialRb.isKinematic = true; dialRb.useGravity = false;
@@ -350,14 +387,16 @@ namespace HCITrilogy.Containment.EditorTools
             var dial = dialDisc.AddComponent<VRDial>();
             dialDisc.AddComponent<HapticBus>();
             var dlo = new SerializedObject(dial);
-            dlo.FindProperty("pointer").objectReferenceValue = dialPointer.transform;
+            dlo.FindProperty("pointer").objectReferenceValue = pointerYaw.transform;
             dlo.ApplyModifiedPropertiesWithoutUndo();
 
-            // Door (north wall)
-            var doorFrame = MakeBox("DoorFrame", new Vector3(0, 1.1f, -D/2 + 0.05f),
+            // Door (north wall). Frame + panel both anchored so VRDoor's slide
+            // animation translates the panel cleanly along its local +X axis,
+            // and the panel doesn't inherit (2.2 * 2.0)m = 4.4 m world width.
+            var doorFrame = MakeAnchoredBox("DoorFrame", new Vector3(0, 1.1f, -D/2 + 0.05f),
                 new Vector3(2.2f, 2.2f, 0.05f),
                 MakeMat("DoorFrame", new Color(0.10f, 0.10f, 0.12f), 0.4f), room);
-            var doorPanel = MakeBox("DoorPanel", new Vector3(0, 0, 0),
+            var doorPanel = MakeAnchoredBox("DoorPanel", new Vector3(0, 0, 0),
                 new Vector3(2.0f, 2.0f, 0.06f),
                 MakeMat("DoorPanel", new Color(0.13f, 0.18f, 0.22f), 0.5f), doorFrame.transform);
             var doorScript = doorPanel.AddComponent<VRDoor>();
@@ -486,6 +525,7 @@ namespace HCITrilogy.Containment.EditorTools
             canvasGO.transform.position = new Vector3(0, 1.5f, 1.5f);
             canvasGO.transform.localScale = Vector3.one * 0.005f;
             ((RectTransform)canvasGO.transform).sizeDelta = new Vector2(900, 600);
+            AddVRRaycaster(canvasGO);
 
             var bg = new GameObject("BG").AddComponent<Image>();
             bg.transform.SetParent(canvasGO.transform, false);
@@ -547,6 +587,29 @@ namespace HCITrilogy.Containment.EditorTools
         }
 
         // ---------- Common helpers ----------
+
+        /// <summary>
+        /// Reflectively adds XRIT's TrackedDeviceGraphicRaycaster to the canvas
+        /// so XR ray interactors can drive uGUI buttons. Uses reflection so
+        /// this Editor script still compiles even if XRIT is absent — in that
+        /// case the regular GraphicRaycaster suffices for desktop/editor mouse
+        /// hit-testing and a warning is printed.
+        /// </summary>
+        private static void AddVRRaycaster(GameObject canvasGO)
+        {
+            var t = System.Type.GetType(
+                "UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster, Unity.XR.Interaction.Toolkit",
+                throwOnError: false);
+            if (t != null)
+            {
+                canvasGO.AddComponent(t);
+            }
+            else
+            {
+                Debug.LogWarning("[HCI Containment] TrackedDeviceGraphicRaycaster not found — XR rays won't hit UI. " +
+                                 "Install the XR Interaction Toolkit package, then add it to '" + canvasGO.name + "' in the Inspector.");
+            }
+        }
 
         private static void EnsureEventSystem()
         {
