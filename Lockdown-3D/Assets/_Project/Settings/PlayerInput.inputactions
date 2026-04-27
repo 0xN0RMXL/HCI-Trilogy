@@ -1,0 +1,49 @@
+{
+    "name": "PlayerInput",
+    "maps": [
+        {
+            "name": "Player",
+            "id": "ab123456-1101-4ab8-9c55-aaa000111000",
+            "actions": [
+                { "name": "Move",     "type": "Value",  "id": "11111111-0000-0000-0000-000000000010", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Look",     "type": "Value",  "id": "11111111-0000-0000-0000-000000000011", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Jump",     "type": "Button", "id": "11111111-0000-0000-0000-000000000012", "expectedControlType": "Button",  "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Sprint",   "type": "Button", "id": "11111111-0000-0000-0000-000000000013", "expectedControlType": "Button",  "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Interact", "type": "Button", "id": "11111111-0000-0000-0000-000000000014", "expectedControlType": "Button",  "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Drop",     "type": "Button", "id": "11111111-0000-0000-0000-000000000015", "expectedControlType": "Button",  "processors": "", "interactions": "", "initialStateCheck": false }
+            ],
+            "bindings": [
+                { "name": "WASD", "id": "22222222-0000-0000-0000-000000000020", "path": "2DVector", "interactions": "", "processors": "", "groups": "", "action": "Move", "isComposite": true, "isPartOfComposite": false },
+                { "name": "up", "id": "22222222-0000-0000-0000-000000000021", "path": "<Keyboard>/w", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+                { "name": "down", "id": "22222222-0000-0000-0000-000000000022", "path": "<Keyboard>/s", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+                { "name": "left", "id": "22222222-0000-0000-0000-000000000023", "path": "<Keyboard>/a", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+                { "name": "right", "id": "22222222-0000-0000-0000-000000000024", "path": "<Keyboard>/d", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+                { "name": "", "id": "22222222-0000-0000-0000-000000000030", "path": "<Mouse>/delta", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Look", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "22222222-0000-0000-0000-000000000040", "path": "<Keyboard>/space", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Jump", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "22222222-0000-0000-0000-000000000050", "path": "<Keyboard>/leftShift", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Sprint", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "22222222-0000-0000-0000-000000000060", "path": "<Keyboard>/e", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Interact", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "22222222-0000-0000-0000-000000000070", "path": "<Keyboard>/q", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Drop", "isComposite": false, "isPartOfComposite": false }
+            ]
+        },
+        {
+            "name": "UI",
+            "id": "ab123456-1102-4ab8-9c55-aaa000111000",
+            "actions": [
+                { "name": "Cancel", "type": "Button", "id": "11111111-0000-0000-0000-000000000099", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+            ],
+            "bindings": [
+                { "name": "", "id": "22222222-0000-0000-0000-000000000099", "path": "<Keyboard>/escape", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Cancel", "isComposite": false, "isPartOfComposite": false }
+            ]
+        }
+    ],
+    "controlSchemes": [
+        {
+            "name": "Keyboard&Mouse",
+            "bindingGroup": "Keyboard&Mouse",
+            "devices": [
+                { "devicePath": "<Keyboard>", "isOptional": false, "isOR": false },
+                { "devicePath": "<Mouse>", "isOptional": false, "isOR": false }
+            ]
+        }
+    ]
+}
