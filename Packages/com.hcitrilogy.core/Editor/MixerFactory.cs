@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -58,4 +57,3 @@ namespace HCITrilogy.Core.Editor
         }
     }
 }
-#endif
