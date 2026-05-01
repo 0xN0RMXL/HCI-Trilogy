@@ -23,6 +23,7 @@ namespace HCITrilogy.Lockdown.Puzzles
         private Collider[] _cols;
         private bool _carried;
         private Camera _carryCam;
+        private static Camera s_cachedMainCam;
 
         private void Awake()
         {
@@ -35,10 +36,17 @@ namespace HCITrilogy.Lockdown.Puzzles
         {
             if (_carried) return;
             _carried = true;
-            _carryCam = Camera.main;
+            _carryCam = ResolveMainCamera();
             if (_rb != null) { _rb.isKinematic = true; }
             foreach (var c in _cols) c.enabled = false;
             by.HeldPickup = this;
+        }
+
+        private static Camera ResolveMainCamera()
+        {
+            if (s_cachedMainCam != null) return s_cachedMainCam;
+            s_cachedMainCam = Camera.main;
+            return s_cachedMainCam;
         }
 
         public void Drop(Interactor by)

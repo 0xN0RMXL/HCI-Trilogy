@@ -348,11 +348,26 @@ namespace HCITrilogy.Signal.EditorTools
             fillRT.anchorMin = Vector2.zero; fillRT.anchorMax = Vector2.one;
             fillRT.offsetMin = new Vector2(2, 2); fillRT.offsetMax = new Vector2(-2, -2);
 
+            // Song-progress bar across the top of the HUD.
+            var progBg = MakeRect(canvas.transform, "SongProgressBg", new Vector2(0, 350), 1100, 8,
+                                  new Color(0.1f, 0.12f, 0.15f, 0.8f));
+            var progFillGO = new GameObject("SongProgressFill");
+            progFillGO.transform.SetParent(progBg.transform, false);
+            var progFill = progFillGO.AddComponent<Image>();
+            progFill.color = new Color(0.36f, 0.88f, 1.0f);
+            progFill.type = Image.Type.Filled;
+            progFill.fillMethod = Image.FillMethod.Horizontal;
+            progFill.fillAmount = 0f;
+            var progFillRT = progFill.rectTransform;
+            progFillRT.anchorMin = Vector2.zero; progFillRT.anchorMax = Vector2.one;
+            progFillRT.offsetMin = new Vector2(1, 1); progFillRT.offsetMax = new Vector2(-1, -1);
+
             var hud = canvas.AddComponent<HUD>();
             var hudSO = new SerializedObject(hud);
             hudSO.FindProperty("scoreText").objectReferenceValue = scoreTxt.GetComponent<Text>();
             hudSO.FindProperty("comboText").objectReferenceValue = comboTxt.GetComponent<Text>();
             hudSO.FindProperty("healthFill").objectReferenceValue = fill;
+            hudSO.FindProperty("songProgressFill").objectReferenceValue = progFill;
             hudSO.FindProperty("score").objectReferenceValue = score;
             hudSO.FindProperty("combo").objectReferenceValue = combo;
             hudSO.FindProperty("health").objectReferenceValue = health;

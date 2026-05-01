@@ -37,7 +37,9 @@ namespace HCITrilogy.Lockdown.Puzzles
 
         private void Update()
         {
-            _t = Mathf.MoveTowards(_t, _isOpen ? 1f : 0f, Time.deltaTime * speed);
+            float target = _isOpen ? 1f : 0f;
+            if (Mathf.Approximately(_t, target)) return;
+            _t = Mathf.MoveTowards(_t, target, Time.deltaTime * speed);
             body.localPosition = Vector3.Lerp(_closed, _open, _t);
         }
 
