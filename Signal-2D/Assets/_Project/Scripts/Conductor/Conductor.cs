@@ -141,9 +141,11 @@ namespace HCITrilogy.Signal.Conductor
 
         private double EstimateSongLength()
         {
-            if (Song == null || Song.notes == null || Song.notes.Length == 0) return 60.0;
+            if (Song == null || Song.chartJson == null) return 60.0;
+            var chart = JsonUtility.FromJson<Chart>(Song.chartJson.text);
+            if (chart == null || chart.notes == null || chart.notes.Length == 0) return 60.0;
             double lastBeat = 0;
-            foreach (var n in Song.notes)
+            foreach (var n in chart.notes)
                 if (n.beat + n.holdBeats > lastBeat) lastBeat = n.beat + n.holdBeats;
             return lastBeat * SecondsPerBeat + 2.0;
         }
