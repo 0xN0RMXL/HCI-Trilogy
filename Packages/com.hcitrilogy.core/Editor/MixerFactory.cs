@@ -13,8 +13,16 @@ namespace HCITrilogy.Core.Editor
     public static class MixerFactory
     {
         /// <summary>
-        /// Creates a GameMixer.mixer asset if one doesn't exist, and wires
-        /// it into the SettingsManager on the given GameObject. Returns the mixer.
+        /// Loads an existing GameMixer.mixer asset at the given folder and wires it
+        /// into the SettingsManager on <paramref name="managersGO"/>. If the asset
+        /// does not exist, logs a one-line instruction and returns null.
+        ///
+        /// Unity's public API exposes no way to create AudioMixer assets from code
+        /// (AudioMixer is a native type, not a ScriptableObject, and there is no
+        /// AudioMixer.Create() API). Users must create the asset once via
+        /// Assets > Create > Audio Mixer, name it "GameMixer", add Master/SFX/Music
+        /// groups, and expose volume parameters as MasterVolume/SFXVolume/MusicVolume.
+        /// Subsequent setup-menu runs will auto-wire it.
         /// </summary>
         public static AudioMixer CreateOrLoad(string folder, GameObject managersGO)
         {
@@ -27,23 +35,11 @@ namespace HCITrilogy.Core.Editor
                 return existing;
             }
 
-            if (!AssetDatabase.IsValidFolder(folder))
-            {
-                var parent = System.IO.Path.GetDirectoryName(folder).Replace('\\', '/');
-                var leaf = System.IO.Path.GetFileName(folder);
-                AssetDatabase.CreateFolder(parent, leaf);
-            }
-
-            var mixer = ScriptableObject.CreateInstance<AudioMixer>();
-            AssetDatabase.CreateAsset(mixer, fullPath);
-            AssetDatabase.SaveAssets();
-
-            WireIntoSettingsManager(managersGO, mixer);
-
-            Debug.Log("[HCI Trilogy] Created GameMixer.mixer. Open the Audio Mixer window " +
-                      "(Window > Audio > Audio Mixer) and add Master/SFX/Music groups with " +
-                      "exposed volume parameters: MasterVolume, SFXVolume, MusicVolume.");
-            return mixer;
+            Debug.LogWarning("[HCI Trilogy] No GameMixer.mixer found at " + fullPath + ". " +
+                             "Create it manually: Assets > Create > Audio Mixer, name it GameMixer, " +
+                             "add Master/SFX/Music groups, then expose volume parameters named " +
+                             "MasterVolume, SFXVolume, MusicVolume. Re-run the setup menu to auto-wire it.");
+            return null;
         }
 
         private static void WireIntoSettingsManager(GameObject go, AudioMixer mixer)
