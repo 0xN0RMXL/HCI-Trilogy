@@ -1,0 +1,1 @@
+{ "name": "com.hcitrilogy.core", "version": "1.0.0", "displayName": "HCI Trilogy Core", "description": "Shared core components across all HCI Trilogy modules.", "dependencies": {} } 

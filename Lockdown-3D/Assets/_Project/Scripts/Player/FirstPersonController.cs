@@ -82,6 +82,7 @@ namespace HCITrilogy.Lockdown.Player
         {
             if (_move == null) return;
             Vector2 in2 = _move.ReadValue<Vector2>();
+            if (in2.sqrMagnitude > 1f) in2.Normalize();
             bool sprinting = _sprint != null && _sprint.IsPressed();
             float speed = sprinting ? runSpeed : walkSpeed;
             Vector3 dir = transform.right * in2.x + transform.forward * in2.y;

@@ -55,6 +55,7 @@ namespace HCITrilogy.Containment.Puzzles
             if (_t >= 1f)
             {
                 _opened = true;
+                enabled = false;
                 OnOpened?.Invoke();
             }
         }

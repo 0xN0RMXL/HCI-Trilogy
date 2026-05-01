@@ -1,14 +1,7 @@
-using UnityEngine;
-
 namespace HCITrilogy.Lockdown.Core
 {
-    public class Bootstrapper : MonoBehaviour
-    {
-        [SerializeField] private string nextScene = "MainMenu";
-        private void Start()
-        {
-            if (SceneFlow.Instance != null) SceneFlow.Instance.LoadAsync(nextScene);
-            else UnityEngine.SceneManagement.SceneManager.LoadScene(nextScene);
-        }
-    }
+    /// <summary>
+    /// Lockdown-3D Bootstrapper. Inherits from the shared core implementation.
+    /// </summary>
+    public class Bootstrapper : HCITrilogy.Core.Bootstrapper { }
 }

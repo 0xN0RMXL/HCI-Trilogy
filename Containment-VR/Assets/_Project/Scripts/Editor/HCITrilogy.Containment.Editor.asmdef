@@ -1,0 +1,1 @@
+{ "name": "HCITrilogy.Containment.Editor", "references": [ "HCITrilogy.Containment", "HCITrilogy.Core" ], "includePlatforms": [ "Editor" ], "excludePlatforms": [], "allowUnsafeCode": false, "overrideReferences": false, "precompiledReferences": [], "autoReferenced": true, "defineConstraints": [], "versionDefines": [], "noEngineReferences": false }

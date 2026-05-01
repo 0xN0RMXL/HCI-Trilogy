@@ -1,14 +1,7 @@
-using UnityEngine;
-
 namespace HCITrilogy.Containment.Core
 {
-    public class Bootstrapper : MonoBehaviour
-    {
-        [SerializeField] private string nextScene = "MainMenu";
-        private void Start()
-        {
-            if (SceneFlow.Instance != null) SceneFlow.Instance.LoadAsync(nextScene);
-            else UnityEngine.SceneManagement.SceneManager.LoadScene(nextScene);
-        }
-    }
+    /// <summary>
+    /// Containment-VR Bootstrapper. Inherits from the shared core implementation.
+    /// </summary>
+    public class Bootstrapper : HCITrilogy.Core.Bootstrapper { }
 }

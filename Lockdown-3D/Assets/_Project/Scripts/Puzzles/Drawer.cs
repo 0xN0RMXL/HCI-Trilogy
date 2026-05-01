@@ -38,7 +38,11 @@ namespace HCITrilogy.Lockdown.Puzzles
         private void Update()
         {
             float target = _isOpen ? 1f : 0f;
-            if (Mathf.Approximately(_t, target)) return;
+            if (Mathf.Approximately(_t, target)) 
+            {
+                enabled = false;
+                return;
+            }
             _t = Mathf.MoveTowards(_t, target, Time.deltaTime * speed);
             body.localPosition = Vector3.Lerp(_closed, _open, _t);
         }
@@ -46,6 +50,7 @@ namespace HCITrilogy.Lockdown.Puzzles
         public void Interact(Interactor by)
         {
             _isOpen = !_isOpen;
+            enabled = true;
             (_isOpen ? sfxOpen : sfxClose)?.Play();
             if (hiddenItem != null && _isOpen) hiddenItem.SetActive(true);
         }

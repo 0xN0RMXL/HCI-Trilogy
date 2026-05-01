@@ -52,9 +52,10 @@ namespace HCITrilogy.Lockdown.Puzzles
 
         private void Update()
         {
-            if (!Unlocked) return;
+            if (!Unlocked || _t >= 1f) return;
             _t = Mathf.MoveTowards(_t, 1f, Time.deltaTime * openSpeed);
             door.localPosition = Vector3.Lerp(_closed, _open, _t);
+            if (_t >= 1f) enabled = false;
         }
 
         public void Hover(bool on) => _h?.SetHover(on);

@@ -36,6 +36,10 @@ namespace HCITrilogy.Signal.Conductor
         private double _userOffsetSeconds;
         private double _pauseAccum;
         private double _pauseStartedAtDsp;
+        private bool   _usingSilentMode;
+        private double _playStartTime;
+        private double _pauseAccumTime;
+        private double _pauseStartedAtTime;
 
         private void Awake()
         {
@@ -67,10 +71,14 @@ namespace HCITrilogy.Signal.Conductor
 
         public void Play()
         {
-            if (Song == null || audioSource.clip == null) return;
+            if (Song == null) return;
+            _usingSilentMode = audioSource.clip == null;
             _dspStartTime = AudioSettings.dspTime + leadInSeconds;
+            _playStartTime = Time.unscaledTime + leadInSeconds;
             _pauseAccum = 0;
-            audioSource.PlayScheduled(_dspStartTime);
+            _pauseAccumTime = 0;
+            if (!_usingSilentMode)
+                audioSource.PlayScheduled(_dspStartTime);
             IsPlaying = true;
             IsPaused = false;
             OnSongStarted?.Invoke();
@@ -89,14 +97,20 @@ namespace HCITrilogy.Signal.Conductor
             if (!IsPlaying) return;
             if (paused && !IsPaused)
             {
-                audioSource.Pause();
+                if (!_usingSilentMode) audioSource.Pause();
                 _pauseStartedAtDsp = AudioSettings.dspTime;
+                _pauseStartedAtTime = Time.unscaledTime;
                 IsPaused = true;
             }
             else if (!paused && IsPaused)
             {
-                _pauseAccum += AudioSettings.dspTime - _pauseStartedAtDsp;
-                audioSource.UnPause();
+                if (_usingSilentMode)
+                    _pauseAccumTime += Time.unscaledTime - _pauseStartedAtTime;
+                else
+                {
+                    _pauseAccum += AudioSettings.dspTime - _pauseStartedAtDsp;
+                    audioSource.UnPause();
+                }
                 IsPaused = false;
             }
         }
@@ -105,16 +119,33 @@ namespace HCITrilogy.Signal.Conductor
         {
             if (!IsPlaying || IsPaused) return;
 
-            double now = AudioSettings.dspTime - _pauseAccum;
-            SongPositionSeconds = now - _dspStartTime - _userOffsetSeconds - (Song != null ? Song.offsetSeconds : 0);
-
-            // Detect end of song.
-            if (!audioSource.isPlaying
-                && audioSource.clip != null
-                && SongPositionSeconds > audioSource.clip.length)
+            if (_usingSilentMode)
             {
-                Stop();
+                double now = Time.unscaledTime - _pauseAccumTime;
+                SongPositionSeconds = now - _playStartTime - _userOffsetSeconds - (Song != null ? Song.offsetSeconds : 0);
+                if (SongPositionSeconds > EstimateSongLength())
+                    Stop();
             }
+            else
+            {
+                double now = AudioSettings.dspTime - _pauseAccum;
+                SongPositionSeconds = now - _dspStartTime - _userOffsetSeconds - (Song != null ? Song.offsetSeconds : 0);
+                if (!audioSource.isPlaying
+                    && audioSource.clip != null
+                    && SongPositionSeconds > audioSource.clip.length)
+                {
+                    Stop();
+                }
+            }
+        }
+
+        private double EstimateSongLength()
+        {
+            if (Song == null || Song.notes == null || Song.notes.Length == 0) return 60.0;
+            double lastBeat = 0;
+            foreach (var n in Song.notes)
+                if (n.beat + n.holdBeats > lastBeat) lastBeat = n.beat + n.holdBeats;
+            return lastBeat * SecondsPerBeat + 2.0;
         }
     }
 }

@@ -149,6 +149,7 @@ namespace HCITrilogy.Containment.EditorTools
             managers.AddComponent<SceneFlow>();
             var bs = new GameObject("Bootstrapper").AddComponent<Bootstrapper>();
             bs.transform.SetParent(managers.transform, false);
+            HCITrilogy.Core.Editor.MixerFactory.CreateOrLoad("Assets/_Project/Settings", managers);
             EditorSceneManager.SaveScene(scene, ScenesFolder + "/Boot.unity");
         }
 
@@ -204,13 +205,125 @@ namespace HCITrilogy.Containment.EditorTools
                 ttrt.offsetMin = ttrt.offsetMax = Vector2.zero;
                 return bGO.GetComponent<Button>();
             }
-            var play = MakeBtn(LocalizationStrings.BtnPlay, new Vector2(0.5f, 0.5f));
-            var quit = MakeBtn(LocalizationStrings.BtnQuit, new Vector2(0.5f, 0.32f));
+            var play     = MakeBtn(LocalizationStrings.BtnPlay,     new Vector2(0.5f, 0.58f));
+            var settings = MakeBtn(LocalizationStrings.BtnSettings, new Vector2(0.5f, 0.46f));
+            var credits  = MakeBtn(LocalizationStrings.BtnCredits,  new Vector2(0.5f, 0.34f));
+            var quit     = MakeBtn(LocalizationStrings.BtnQuit,     new Vector2(0.5f, 0.22f));
+
+            // --- Settings Panel ---
+            var settingsPanelGO = new GameObject("SettingsPanel", typeof(Image));
+            settingsPanelGO.transform.SetParent(canvasGO.transform, false);
+            var spImg = settingsPanelGO.GetComponent<Image>();
+            spImg.color = new Color(0.054f, 0.066f, 0.086f, 0.95f);
+            var sprt = spImg.rectTransform;
+            sprt.anchorMin = Vector2.zero; sprt.anchorMax = Vector2.one;
+            sprt.offsetMin = sprt.offsetMax = Vector2.zero;
+
+            var settingsTitle = new GameObject("Title").AddComponent<Text>();
+            settingsTitle.transform.SetParent(settingsPanelGO.transform, false);
+            settingsTitle.text = "SETTINGS"; settingsTitle.font = font;
+            settingsTitle.fontSize = 48; settingsTitle.color = AccentCyan;
+            settingsTitle.alignment = TextAnchor.MiddleCenter;
+            var strrt = settingsTitle.rectTransform;
+            strrt.anchorMin = new Vector2(0.5f, 0.85f); strrt.anchorMax = new Vector2(0.5f, 0.85f);
+            strrt.sizeDelta = new Vector2(400, 80); strrt.anchoredPosition = Vector2.zero;
+
+            // Volume sliders
+            Slider MakeSlider(string label, float value, Vector2 pos)
+            {
+                var row = new GameObject("Row_" + label);
+                row.transform.SetParent(settingsPanelGO.transform, false);
+                var rowRt = row.GetComponent<RectTransform>();
+                rowRt.anchorMin = pos; rowRt.anchorMax = pos;
+                rowRt.sizeDelta = new Vector2(500, 40); rowRt.anchoredPosition = Vector2.zero;
+
+                var lbl = new GameObject("Label").AddComponent<Text>();
+                lbl.transform.SetParent(row.transform, false);
+                lbl.text = label; lbl.font = font; lbl.fontSize = 22;
+                lbl.color = Color.white; lbl.alignment = TextAnchor.MiddleLeft;
+                var lrt = lbl.rectTransform;
+                lrt.anchorMin = Vector2.zero; lrt.anchorMax = new Vector2(0.4f, 1f);
+                lrt.offsetMin = lrt.offsetMax = Vector2.zero;
+
+                var sliderGO = new GameObject("Slider", typeof(Image), typeof(Slider));
+                sliderGO.transform.SetParent(row.transform, false);
+                var sl = sliderGO.GetComponent<Slider>();
+                sl.minValue = 0f; sl.maxValue = 1f; sl.value = value;
+                var slRt = sliderGO.GetComponent<RectTransform>();
+                slRt.anchorMin = new Vector2(0.45f, 0f); slRt.anchorMax = new Vector2(1f, 1f);
+                slRt.offsetMin = slRt.offsetMax = Vector2.zero;
+                return sl;
+            }
+
+            MakeSlider("Master Volume", 0.7f, new Vector2(0.5f, 0.72f));
+            MakeSlider("SFX Volume",    0.55f, new Vector2(0.5f, 0.66f));
+            MakeSlider("Music Volume",  0.4f,  new Vector2(0.5f, 0.60f));
+
+            // VR-specific toggles
+            Toggle MakeToggle(string label, bool value, Vector2 pos)
+            {
+                var row = new GameObject("Row_" + label);
+                row.transform.SetParent(settingsPanelGO.transform, false);
+                var rowRt = row.GetComponent<RectTransform>();
+                rowRt.anchorMin = pos; rowRt.anchorMax = pos;
+                rowRt.sizeDelta = new Vector2(500, 36); rowRt.anchoredPosition = Vector2.zero;
+
+                var toggleGO = new GameObject("Toggle", typeof(Image), typeof(Toggle));
+                toggleGO.transform.SetParent(row.transform, false);
+                var tog = toggleGO.GetComponent<Toggle>();
+                tog.isOn = value;
+                var tRt = toggleGO.GetComponent<RectTransform>();
+                tRt.anchorMin = new Vector2(0f, 0f); tRt.anchorMax = new Vector2(0.15f, 1f);
+                tRt.offsetMin = tRt.offsetMax = Vector2.zero;
+
+                var lbl = new GameObject("Label").AddComponent<Text>();
+                lbl.transform.SetParent(row.transform, false);
+                lbl.text = label; lbl.font = font; lbl.fontSize = 20;
+                lbl.color = Color.white; lbl.alignment = TextAnchor.MiddleLeft;
+                var lrt = lbl.rectTransform;
+                lrt.anchorMin = new Vector2(0.18f, 0f); lrt.anchorMax = Vector2.one;
+                lrt.offsetMin = lrt.offsetMax = Vector2.zero;
+                return tog;
+            }
+
+            MakeToggle("Vignette", true, new Vector2(0.5f, 0.50f));
+            MakeToggle("Snap Turn", true, new Vector2(0.5f, 0.44f));
+            MakeToggle("Left Hand", false, new Vector2(0.5f, 0.38f));
+
+            var closeSettingsBtn = MakeBtn("CLOSE", new Vector2(0.5f, 0.12f));
+            closeSettingsBtn.transform.SetParent(settingsPanelGO.transform, false);
+            settingsPanelGO.SetActive(false);
+
+            // --- Credits Panel ---
+            var creditsPanelGO = new GameObject("CreditsPanel", typeof(Image));
+            creditsPanelGO.transform.SetParent(canvasGO.transform, false);
+            var cpImg = creditsPanelGO.GetComponent<Image>();
+            cpImg.color = new Color(0.054f, 0.066f, 0.086f, 0.95f);
+            var cprt = cpImg.rectTransform;
+            cprt.anchorMin = Vector2.zero; cprt.anchorMax = Vector2.one;
+            cprt.offsetMin = cprt.offsetMax = Vector2.zero;
+
+            var creditsBody = new GameObject("Body").AddComponent<Text>();
+            creditsBody.transform.SetParent(creditsPanelGO.transform, false);
+            creditsBody.text = "HCI Trilogy\n\nDesign & Code: Omar Ammar\n\nAssets: CC0 / Public Domain\nSee CREDITS.md for full attribution.";
+            creditsBody.font = font; creditsBody.fontSize = 28;
+            creditsBody.color = Color.white; creditsBody.alignment = TextAnchor.MiddleCenter;
+            var cbrt = creditsBody.rectTransform;
+            cbrt.anchorMin = new Vector2(0.1f, 0.2f); cbrt.anchorMax = new Vector2(0.9f, 0.85f);
+            cbrt.offsetMin = cbrt.offsetMax = Vector2.zero;
+
+            var closeCreditsBtn = MakeBtn("CLOSE", new Vector2(0.5f, 0.08f));
+            closeCreditsBtn.transform.SetParent(creditsPanelGO.transform, false);
+            creditsPanelGO.SetActive(false);
 
             var menu = canvasGO.AddComponent<MainMenuController>();
             var so = new SerializedObject(menu);
             so.FindProperty("playButton").objectReferenceValue = play;
+            so.FindProperty("settingsButton").objectReferenceValue = settings;
+            so.FindProperty("creditsButton").objectReferenceValue = credits;
             so.FindProperty("quitButton").objectReferenceValue = quit;
+            so.FindProperty("settingsPanel").objectReferenceValue = settingsPanelGO;
+            so.FindProperty("creditsPanel").objectReferenceValue = creditsPanelGO;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             EnsureEventSystem();

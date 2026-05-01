@@ -20,11 +20,11 @@ namespace HCITrilogy.Containment.Player
         [SerializeField] private float selectAmplitude = 0.55f;
         [SerializeField] private float selectDuration  = 0.10f;
 
-        private XRBaseInteractable _i;
+        private XRGrabInteractable _i;
 
         private void Awake()
         {
-            _i = GetComponent<XRBaseInteractable>();
+            _i = GetComponent<XRGrabInteractable>();
             if (_i == null) return;
             _i.firstHoverEntered.AddListener(OnHover);
             _i.selectEntered.AddListener(OnSelect);
@@ -42,8 +42,8 @@ namespace HCITrilogy.Containment.Player
 
         private static void Pulse(IXRInteractor interactor, float amp, float dur)
         {
-            // XRIT 3.x: XRBaseInputInteractor exposes SendHapticImpulse directly.
-            if (interactor is XRBaseInputInteractor controller)
+            // XRIT 3.x: XRBaseControllerInteractor exposes SendHapticImpulse directly.
+            if (interactor is XRBaseControllerInteractor controller)
                 controller.SendHapticImpulse(amp, dur);
         }
     }

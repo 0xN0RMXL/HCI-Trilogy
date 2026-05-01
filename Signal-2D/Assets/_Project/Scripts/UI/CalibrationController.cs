@@ -82,13 +82,6 @@ namespace HCITrilogy.Signal.UI
             _clicksHeard = 0;
             _running = true;
             _firstClickDsp = AudioSettings.dspTime + 1.0;
-            for (int i = 0; i < totalClicks; i++)
-            {
-                double when = _firstClickDsp + i * (60.0 / bpm);
-                clickSource.clip = clickClip;
-                // Schedule each click manually (one source can't schedule all 16
-                // discrete plays at once, so we use coroutine-y polling).
-            }
             statusText.text = "Press SPACE on every click...";
             resultText.text = "";
             acceptButton.interactable = false;
@@ -99,16 +92,16 @@ namespace HCITrilogy.Signal.UI
 
         private System.Collections.IEnumerator SchedulerRoutine()
         {
-            while (_clicksScheduled < totalClicks)
+            // Pre-schedule all clicks using PlayScheduled for sample-accurate timing.
+            // Each click is scheduled on the same AudioSource; Unity queues them.
+            clickSource.clip = clickClip;
+            for (int i = 0; i < totalClicks; i++)
             {
-                double when = _firstClickDsp + _clicksScheduled * (60.0 / bpm);
-                if (AudioSettings.dspTime >= when - 0.05)
-                {
-                    AudioSource.PlayClipAtPoint(clickClip, Vector3.zero);
-                    _clicksScheduled++;
-                }
-                yield return null;
+                double when = _firstClickDsp + i * (60.0 / bpm);
+                clickSource.PlayScheduled(when);
             }
+            _clicksScheduled = totalClicks;
+            yield break;
         }
 
         private void Finish()

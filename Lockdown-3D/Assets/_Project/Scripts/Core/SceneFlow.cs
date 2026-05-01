@@ -1,22 +1,20 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace HCITrilogy.Lockdown.Core
 {
-    public class SceneFlow : MonoBehaviour
+    /// <summary>
+    /// Lockdown-3D scene transitions. Inherits from the shared core SceneFlow.
+    /// Uses a screen-overlay UI Image for fade-to-black.
+    /// </summary>
+    public class SceneFlow : HCITrilogy.Core.SceneFlow
     {
-        public static SceneFlow Instance { get; private set; }
-        [SerializeField] private float fadeSeconds = 0.4f;
+        private Image _fader;
 
-        private Image _fader; private bool _loading;
-
-        private void Awake()
+        protected override void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            base.Awake();
             BuildFader();
         }
 
@@ -38,20 +36,8 @@ namespace HCITrilogy.Lockdown.Core
             _fader = img;
         }
 
-        public void LoadAsync(string scene) { if (!_loading) StartCoroutine(Run(scene)); }
-
-        private IEnumerator Run(string scene)
-        {
-            _loading = true;
-            // Defensive: ensure we leave any prior pause behind so the next
-            // scene's UI animations/coroutines run at normal speed.
-            Time.timeScale = 1f;
-            yield return Fade(0, 1);
-            var op = SceneManager.LoadSceneAsync(scene);
-            while (op is { isDone: false }) yield return null;
-            yield return Fade(1, 0);
-            _loading = false;
-        }
+        protected override IEnumerator FadeOut() => Fade(0, 1);
+        protected override IEnumerator FadeIn()  => Fade(1, 0);
 
         private IEnumerator Fade(float a, float b)
         {

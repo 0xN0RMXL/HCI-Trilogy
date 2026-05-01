@@ -157,6 +157,7 @@ namespace HCITrilogy.Signal.EditorTools
             boot.AddComponent<Bootstrapper>();
             // A camera (so the editor doesn't complain).
             var cam = new GameObject("Main Camera"); cam.AddComponent<Camera>(); cam.tag = "MainCamera";
+            HCITrilogy.Core.Editor.MixerFactory.CreateOrLoad("Assets/_Project/Settings", managers);
             EditorSceneManager.SaveScene(scene, path);
         }
 
@@ -182,13 +183,76 @@ namespace HCITrilogy.Signal.EditorTools
             var cred = MakeButton(canvas.transform, "Credits",   LocalizationStrings.BtnCredits,   new Vector2(0f, -150f));
             var quit = MakeButton(canvas.transform, "Quit",      LocalizationStrings.BtnQuit,      new Vector2(0f, -210f));
 
-            var ctrl = canvas.AddComponent<MainMenuController>();
+            // --- Settings Panel (uses SettingsPanel.cs component) ---
+            var settingsPanelGO = new GameObject("SettingsPanel", typeof(Image));
+            settingsPanelGO.transform.SetParent(canvas.transform, false);
+            var spImg = settingsPanelGO.GetComponent<Image>();
+            spImg.color = new Color(0.054f, 0.067f, 0.086f, 0.95f);
+            var sprt = spImg.rectTransform;
+            sprt.anchorMin = Vector2.zero; sprt.anchorMax = Vector2.one;
+            sprt.offsetMin = sprt.offsetMax = Vector2.zero;
+
+            var settingsTitle = MakeText(settingsPanelGO.transform, "SettingsTitle", "SETTINGS", 48, FontStyle.Bold,
+                                         new Vector2(0f, 280f), 400, 80, new Color(0.36f, 0.88f, 1.0f));
+
+            // Sliders for SettingsPanel.cs
+            var masterSl = MakeSlider(settingsPanelGO.transform, "Master", 0.7f, new Vector2(0f, 180f));
+            var sfxSl    = MakeSlider(settingsPanelGO.transform, "SFX",    0.55f, new Vector2(0f, 120f));
+            var musicSl  = MakeSlider(settingsPanelGO.transform, "Music",  0.4f, new Vector2(0f, 60f));
+            var noteSpeedSl = MakeSlider(settingsPanelGO.transform, "NoteSpeed", 0.5f, new Vector2(0f, 0f));
+
+            var offsetField = new GameObject("OffsetField", typeof(InputField));
+            offsetField.transform.SetParent(settingsPanelGO.transform, false);
+            var ofRt = offsetField.GetComponent<RectTransform>();
+            ofRt.anchorMin = new Vector2(0.5f, -60f); ofRt.anchorMax = new Vector2(0.5f, -60f);
+            ofRt.sizeDelta = new Vector2(200, 40); ofRt.anchoredPosition = Vector2.zero;
+            var ofText = new GameObject("Text").AddComponent<Text>();
+            ofText.transform.SetParent(offsetField.transform, false);
+            ofText.text = "0"; ofText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            ofText.fontSize = 22; ofText.color = Color.white; ofText.alignment = TextAnchor.MiddleCenter;
+            ofText.rectTransform.anchorMin = Vector2.zero; ofText.rectTransform.anchorMax = Vector2.one;
+            ofText.rectTransform.offsetMin = ofText.rectTransform.offsetMax = Vector2.zero;
+            offsetField.GetComponent<InputField>().textComponent = ofText;
+            offsetField.GetComponent<InputField>().contentType = InputField.ContentType.IntegerNumber;
+
+            var closeSettingsBtn = MakeButton(settingsPanelGO.transform, "Close", "CLOSE", new Vector2(0f, -180f));
+
+            var settingsPanelComp = settingsPanelGO.AddComponent<SettingsPanel>();
+            var spSO = new SerializedObject(settingsPanelComp);
+            spSO.FindProperty("masterSlider").objectReferenceValue    = masterSl;
+            spSO.FindProperty("sfxSlider").objectReferenceValue       = sfxSl;
+            spSO.FindProperty("musicSlider").objectReferenceValue     = musicSl;
+            spSO.FindProperty("noteSpeedSlider").objectReferenceValue = noteSpeedSl;
+            spSO.FindProperty("audioOffsetField").objectReferenceValue = offsetField.GetComponent<InputField>();
+            spSO.FindProperty("closeButton").objectReferenceValue     = closeSettingsBtn.GetComponent<Button>();
+            spSO.ApplyModifiedPropertiesWithoutUndo();
+            settingsPanelGO.SetActive(false);
+
+            // --- Credits Panel ---
+            var creditsPanelGO = new GameObject("CreditsPanel", typeof(Image));
+            creditsPanelGO.transform.SetParent(canvas.transform, false);
+            var cpImg = creditsPanelGO.GetComponent<Image>();
+            cpImg.color = new Color(0.054f, 0.067f, 0.086f, 0.95f);
+            var cprt = cpImg.rectTransform;
+            cprt.anchorMin = Vector2.zero; cprt.anchorMax = Vector2.one;
+            cprt.offsetMin = cprt.offsetMax = Vector2.zero;
+
+            var creditsBody = MakeText(creditsPanelGO.transform, "CreditsBody",
+                "HCI Trilogy\n\nDesign & Code: Omar Ammar\n\nAssets: CC0 / Public Domain\nSee CREDITS.md for full attribution.",
+                28, FontStyle.Normal, new Vector2(0f, 40f), 700, 300, Color.white);
+
+            var closeCreditsBtn = MakeButton(creditsPanelGO.transform, "Close", "CLOSE", new Vector2(0f, -220f));
+            creditsPanelGO.SetActive(false);
+
+            var ctrl = canvas.gameObject.AddComponent<MainMenuController>();
             SerializedObject so = new SerializedObject(ctrl);
             so.FindProperty("playButton").objectReferenceValue      = play.GetComponent<Button>();
             so.FindProperty("calibrateButton").objectReferenceValue = cal.GetComponent<Button>();
             so.FindProperty("settingsButton").objectReferenceValue  = setn.GetComponent<Button>();
             so.FindProperty("creditsButton").objectReferenceValue   = cred.GetComponent<Button>();
             so.FindProperty("quitButton").objectReferenceValue      = quit.GetComponent<Button>();
+            so.FindProperty("settingsPanel").objectReferenceValue   = settingsPanelGO;
+            so.FindProperty("creditsPanel").objectReferenceValue    = creditsPanelGO;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             // EventSystem so buttons work
@@ -362,7 +426,7 @@ namespace HCITrilogy.Signal.EditorTools
             progFillRT.anchorMin = Vector2.zero; progFillRT.anchorMax = Vector2.one;
             progFillRT.offsetMin = new Vector2(1, 1); progFillRT.offsetMax = new Vector2(-1, -1);
 
-            var hud = canvas.AddComponent<HUD>();
+            var hud = canvas.gameObject.AddComponent<HUD>();
             var hudSO = new SerializedObject(hud);
             hudSO.FindProperty("scoreText").objectReferenceValue = scoreTxt.GetComponent<Text>();
             hudSO.FindProperty("comboText").objectReferenceValue = comboTxt.GetComponent<Text>();
@@ -416,7 +480,7 @@ namespace HCITrilogy.Signal.EditorTools
             var retry = MakeButton(canvas.transform, "Retry", LocalizationStrings.BtnRetry, new Vector2(-110, -180));
             var menu  = MakeButton(canvas.transform, "Menu", LocalizationStrings.BtnMenu, new Vector2(110, -180));
 
-            var ctrl = canvas.AddComponent<ResultsScreen>();
+            var ctrl = canvas.gameObject.AddComponent<ResultsScreen>();
             var so = new SerializedObject(ctrl);
             so.FindProperty("perfectText").objectReferenceValue = perf.GetComponent<Text>();
             so.FindProperty("goodText").objectReferenceValue = good.GetComponent<Text>();
@@ -537,6 +601,29 @@ namespace HCITrilogy.Signal.EditorTools
             lt.anchorMin = Vector2.zero; lt.anchorMax = Vector2.one;
             lt.offsetMin = lt.offsetMax = Vector2.zero;
             return go;
+        }
+
+        private static Slider MakeSlider(Transform parent, string label, float value, Vector2 pos)
+        {
+            var row = new GameObject("Row_" + label);
+            row.transform.SetParent(parent, false);
+            var rowRt = row.AddComponent<RectTransform>();
+            rowRt.anchorMin = new Vector2(0.5f, 0.5f); rowRt.anchorMax = new Vector2(0.5f, 0.5f);
+            rowRt.sizeDelta = new Vector2(500, 40); rowRt.anchoredPosition = pos;
+
+            var lbl = MakeText(row.transform, "Label", label, 20, FontStyle.Normal,
+                               new Vector2(-200f, 0f), 160, 40, Color.white, TextAnchor.MiddleLeft);
+
+            var sliderGO = new GameObject("Slider", typeof(Image));
+            sliderGO.transform.SetParent(row.transform, false);
+            var slImg = sliderGO.GetComponent<Image>();
+            slImg.color = new Color(0.2f, 0.22f, 0.26f);
+            var sl = sliderGO.AddComponent<Slider>();
+            sl.minValue = 0f; sl.maxValue = 1f; sl.value = value;
+            var slRt = sliderGO.GetComponent<RectTransform>();
+            slRt.anchorMin = new Vector2(0.45f, 0f); slRt.anchorMax = new Vector2(1f, 1f);
+            slRt.offsetMin = slRt.offsetMax = Vector2.zero;
+            return sl;
         }
 
         private static void EnsureEventSystem()

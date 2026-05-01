@@ -1,30 +1,22 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace HCITrilogy.Signal.Core
 {
     /// <summary>
-    /// Scene loader with a fade-to-black transition. Place one on a persistent
-    /// GameObject in the Boot scene. Call LoadAsync("SceneName").
+    /// Signal-2D scene transitions. Inherits from the shared core SceneFlow.
+    /// Builds a screen-overlay fader Canvas at runtime for fade-to-black.
     /// </summary>
-    public class SceneFlow : MonoBehaviour
+    public class SceneFlow : HCITrilogy.Core.SceneFlow
     {
-        public static SceneFlow Instance { get; private set; }
-
-        [SerializeField] private float fadeSeconds = 0.35f;
         [SerializeField] private Color fadeColor = Color.black;
 
-        private Canvas _canvas;
         private Image _fader;
-        private bool _loading;
 
-        private void Awake()
+        protected override void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            base.Awake();
             BuildFader();
         }
 
@@ -32,9 +24,9 @@ namespace HCITrilogy.Signal.Core
         {
             var canvasGO = new GameObject("SceneFlow Canvas");
             canvasGO.transform.SetParent(transform, false);
-            _canvas = canvasGO.AddComponent<Canvas>();
-            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _canvas.sortingOrder = 9999;
+            var canvas = canvasGO.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 9999;
             canvasGO.AddComponent<CanvasScaler>();
             canvasGO.AddComponent<GraphicRaycaster>();
 
@@ -49,21 +41,8 @@ namespace HCITrilogy.Signal.Core
             rt.offsetMin = rt.offsetMax = Vector2.zero;
         }
 
-        public void LoadAsync(string sceneName)
-        {
-            if (_loading) return;
-            StartCoroutine(LoadRoutine(sceneName));
-        }
-
-        private IEnumerator LoadRoutine(string sceneName)
-        {
-            _loading = true;
-            yield return Fade(0f, 1f);
-            var op = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
-            while (op is { isDone: false }) yield return null;
-            yield return Fade(1f, 0f);
-            _loading = false;
-        }
+        protected override IEnumerator FadeOut() => Fade(0f, 1f);
+        protected override IEnumerator FadeIn()  => Fade(1f, 0f);
 
         private IEnumerator Fade(float from, float to)
         {

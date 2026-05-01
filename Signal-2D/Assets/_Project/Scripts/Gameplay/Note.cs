@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Pool;
 using HCITrilogy.Signal.Conductor;
 
 namespace HCITrilogy.Signal.Gameplay
@@ -16,14 +17,15 @@ namespace HCITrilogy.Signal.Gameplay
         private Lane _lane;
         private SongData _song;
         private Conductor.Conductor _c;
+        private ObjectPool<Note> _pool;
         private SpriteRenderer _sprite;
         private const float MissCutoffSeconds = 0.18f;
 
         private void Awake() => _sprite = GetComponent<SpriteRenderer>();
 
-        public void Init(NoteData data, Lane lane, SongData song, Conductor.Conductor c)
+        public void Init(NoteData data, Lane lane, SongData song, Conductor.Conductor c, ObjectPool<Note> pool)
         {
-            Data = data; _lane = lane; _song = song; _c = c; Judged = false;
+            Data = data; _lane = lane; _song = song; _c = c; _pool = pool; Judged = false;
             lane.Register(this);
             transform.position = lane.SpawnPos;
         }
@@ -47,7 +49,8 @@ namespace HCITrilogy.Signal.Gameplay
             if (Judged) return;
             Judged = true;
             _lane.Unregister(this);
-            Destroy(gameObject);
+            if (_pool != null) _pool.Release(this);
+            else Destroy(gameObject);
         }
     }
 }
