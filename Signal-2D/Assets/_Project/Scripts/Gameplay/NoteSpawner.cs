@@ -28,7 +28,7 @@ namespace HCITrilogy.Signal.Gameplay
             if (song != null && song.chartJson != null)
                 _chart = JsonUtility.FromJson<Chart>(song.chartJson.text);
             else
-                Debug.LogError("NoteSpawner: missing song or chart JSON.");
+                Debug.LogWarning("NoteSpawner: missing song or chart JSON; no notes will spawn.");
         }
 
         private void Update()
