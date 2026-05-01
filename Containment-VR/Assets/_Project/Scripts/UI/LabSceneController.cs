@@ -15,7 +15,10 @@ namespace HCITrilogy.Containment.UI
 
         private void Start()
         {
-            _runStarted = Time.unscaledTime;
+            // Time.time matches OxygenTimer's Time.deltaTime accounting so escape time
+            // and remaining-oxygen stay in sync. Containment-VR has no PauseController
+            // (VR convention: take the headset off), so timeScale stays at 1 in normal play.
+            _runStarted = Time.time;
             if (door != null)  door.OnOpened += OnEscape;
             if (timer != null) timer.OnExpired += OnFail;
         }
@@ -30,7 +33,7 @@ namespace HCITrilogy.Containment.UI
         {
             if (_ended) return;
             _ended = true;
-            ResultsScreen.LastEscapeSeconds = Time.unscaledTime - _runStarted;
+            ResultsScreen.LastEscapeSeconds = Time.time - _runStarted;
             ResultsScreen.LastSuccess = true;
             Invoke(nameof(GoResults), 2.0f);
         }
@@ -39,7 +42,7 @@ namespace HCITrilogy.Containment.UI
         {
             if (_ended) return;
             _ended = true;
-            ResultsScreen.LastEscapeSeconds = Time.unscaledTime - _runStarted;
+            ResultsScreen.LastEscapeSeconds = Time.time - _runStarted;
             ResultsScreen.LastSuccess = false;
             Invoke(nameof(GoResults), 1.0f);
         }
